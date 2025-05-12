@@ -1,5 +1,6 @@
 package cn.programcx.foxnaserver.jobs;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -25,7 +26,7 @@ public class BroadcastJob extends QuartzJobBean {
         try (InputStream inputStream = new FileInputStream(configPath)) {
             props.load(inputStream);
 
-            int port = props.getProperty("port").isEmpty() ? 25522 : Integer.parseInt(props.getProperty("port"));
+            int port = props.getProperty("server.port")==null || props.getProperty("server.port").isEmpty() ? 25522 : Integer.parseInt(props.getProperty("server.port"));
 
             //发送广播消息
             DatagramSocket socket = new DatagramSocket();
@@ -35,7 +36,14 @@ public class BroadcastJob extends QuartzJobBean {
             getBroadcastAddresses().forEach(addr -> {
                 try {
                     InetAddress address = InetAddress.getByName(addr);
-                    String msg = props.getProperty("name").isEmpty() ? "FoxNAS" : props.getProperty("name");
+
+                    Map<String,Object> jsonMap = new HashMap<>();
+                    jsonMap.put("name", props.getProperty("name").isEmpty() ? "FoxNAS" : props.getProperty("name"));
+                    jsonMap.put("port", port);
+                    jsonMap.put("ip", addr);
+
+                    ObjectMapper mapper = new ObjectMapper();
+                    String msg = mapper.writeValueAsString(jsonMap);
 
                     byte[] buf = msg.getBytes();
                     DatagramPacket packet = new DatagramPacket(buf, buf.length, address, port);
