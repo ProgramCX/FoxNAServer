@@ -1,0 +1,67 @@
+package cn.programcx.foxnaserver.config;
+
+import cn.programcx.foxnaserver.security.JwtAuthenticationFilter;
+import cn.programcx.foxnaserver.util.JwtUtil;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+@Configuration
+public class SecurityConfig {
+
+    private final JwtUtil jwtUtil;
+    private final UserDetailsService userDetailsService;
+
+    public SecurityConfig(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
+        this.jwtUtil = jwtUtil;
+        this.userDetailsService = userDetailsService;
+    }
+
+    // 配置密码加密器
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    // 配置身份认证提供者
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService); // 用于从数据库加载用户信息
+        provider.setPasswordEncoder(passwordEncoder());     // 密码加密器
+        return provider;
+    }
+
+    // 配置 AuthenticationManager（用于登录接口）
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
+
+    // 注册你的 JwtAuthenticationFilter
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+        return new JwtAuthenticationFilter(jwtUtil);
+    }
+
+    // 核心安全过滤链配置
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .authorizeRequests()
+                .antMatchers("/auth/**").permitAll()  // 允许所有用户访问
+                .antMatchers("/admin/**").hasRole("ADMIN")  // 只有 ADMIN 角色的用户可以访问
+                .anyRequest().authenticated(); // 使用表单登录
+        return http.build();
+    }
+}
