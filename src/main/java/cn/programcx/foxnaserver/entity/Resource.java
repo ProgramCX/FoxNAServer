@@ -16,6 +16,8 @@ public class Resource {
 
     private String ownerName;
 
+    private String folderName;
+
     private String permissionType;
 
 

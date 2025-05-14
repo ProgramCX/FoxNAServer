@@ -1,10 +1,11 @@
 package cn.programcx.foxnaserver.service;
 
+import cn.programcx.foxnaserver.entity.Permission;
+import cn.programcx.foxnaserver.entity.User;
 import cn.programcx.foxnaserver.mapper.PermissionMapper;
-import cn.programcx.foxnaserver.mapper.ResourceMapper;
 import cn.programcx.foxnaserver.mapper.UserMapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,18 +14,37 @@ import java.util.List;
 public class AuthenticationService {
 
     @Autowired
-    private UserMapper userMapper;
-
-    @Autowired
-    private ResourceMapper  resourceMapper;
-
-    @Autowired
     private PermissionMapper permissionMapper;
 
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    private UserMapper userMapper;
 
-    private List<String> getUserPermissions(String userName) {
-        return null;
+    public boolean registerAdmin() {
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+
+        queryWrapper.eq(User::getUserName, "admin");
+
+        if (userMapper.selectOne(queryWrapper) != null) {
+            return false;
+        }
+
+        User user = new User();
+        user.setUserName("admin");
+        user.setPassword("123456");
+        user.setState("enabled");
+
+        Permission permission = new Permission();
+        permission.setOwnerName("admin");
+        userMapper.insert(user);
+
+        List<String> areaList = List.of("FILE","STREAM","DDNS","EMAIL","USER");
+
+        areaList.forEach(area -> {
+            permission.setAreaName(area);
+            permissionMapper.insert(permission);
+        });
+
+
+        return true;
     }
 }

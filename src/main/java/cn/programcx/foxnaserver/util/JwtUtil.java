@@ -1,10 +1,16 @@
 package cn.programcx.foxnaserver.util;
 
 import io.jsonwebtoken.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import cn.programcx.foxnaserver.config.JwtProperties;
 @Component
 public class JwtUtil {
@@ -17,16 +23,22 @@ public class JwtUtil {
         this.jwtProperties = jwtProperties;
     }
 
-    // 生成 JWT
-    public String generateToken(String username, List<String> roles) {
+    public String generateToken(Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        List<String> roles = user.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+
+        // 使用 JWT 库生成 token
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(user.getUsername())
                 .claim("roles", roles)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + jwtProperties.getExpiration()))
-                .signWith(SignatureAlgorithm.HS512, jwtProperties.getSecret())
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))  // 设置过期时间为1小时
+                .signWith(SignatureAlgorithm.HS256, jwtProperties.getSecret())
                 .compact();
     }
+
 
     // 解析用户名
     public String getUsername(String token) {

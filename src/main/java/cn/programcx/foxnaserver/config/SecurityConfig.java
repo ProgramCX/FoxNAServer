@@ -1,7 +1,9 @@
 package cn.programcx.foxnaserver.config;
 
 import cn.programcx.foxnaserver.security.JwtAuthenticationFilter;
+import cn.programcx.foxnaserver.service.UserDetailService;
 import cn.programcx.foxnaserver.util.JwtUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -9,9 +11,7 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -19,18 +19,19 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 public class SecurityConfig {
 
-    private final JwtUtil jwtUtil;
-    private final UserDetailsService userDetailsService;
+    @Autowired
+    private UserDetailService userDetailsService;
 
-    public SecurityConfig(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
+    private final JwtUtil jwtUtil;
+
+    public SecurityConfig(JwtUtil jwtUtil ) {
         this.jwtUtil = jwtUtil;
-        this.userDetailsService = userDetailsService;
     }
 
     // 配置密码加密器
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return NoOpPasswordEncoder.getInstance();
     }
 
     // 配置身份认证提供者
@@ -48,7 +49,7 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    // 注册你的 JwtAuthenticationFilter
+    // 注册的 JwtAuthenticationFilter
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
         return new JwtAuthenticationFilter(jwtUtil);
@@ -58,9 +59,15 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .csrf().disable()
+                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
                 .authorizeRequests()
-                .antMatchers("/auth/**").permitAll()  // 允许所有用户访问
-                .antMatchers("/admin/**").hasRole("ADMIN")  // 只有 ADMIN 角色的用户可以访问
+                .antMatchers("/api/auth/**").permitAll()  // 允许所有用户访问
+                .antMatchers("/api/file/**").hasAuthority("FILE")
+                .antMatchers("/api/stream/**").hasAuthority("STREAM")
+                .antMatchers("/api/ddns/**").hasAuthority("DDNS")
+                .antMatchers("/api/mail/**").hasAuthority("MAIL")
+                .antMatchers("/api/user/**").hasAuthority("USER")
                 .anyRequest().authenticated(); // 使用表单登录
         return http.build();
     }
