@@ -8,12 +8,10 @@ import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/user")
@@ -43,6 +41,43 @@ public class UserManagementController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
         return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PostMapping("delUser")
+    public ResponseEntity<?> delUser(@RequestParam String userName) {
+       try {
+           userManagementService.delUser(userName);
+           return new ResponseEntity<>(HttpStatus.OK);
+       }
+       catch (Exception e) {
+           return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+       }
+    }
+
+    @PostMapping("blockUser")
+    public ResponseEntity<?> blockUser(@RequestParam String userName) {
+        try {
+            userManagementService.blockUser(userName);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PostMapping("changePassword")
+    public ResponseEntity<?> changePassword(@RequestBody Map<String,String> map) {
+        String password = map.get("password");
+        String userName = map.get("userName");
+
+        if (password == null || userName == null) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        try{
+            userManagementService.changePassword(userName,password);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 
 }

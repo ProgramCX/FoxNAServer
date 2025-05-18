@@ -62,7 +62,8 @@ public class SecurityConfig {
                 .csrf().disable()
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
                 .authorizeRequests()
-                .antMatchers("/api/auth/**").permitAll()  // 允许所有用户访问
+                .antMatchers("/api/auth/**").permitAll()
+                .antMatchers("/api/status/**").permitAll()// 允许所有用户访问
                 .antMatchers("/api/file/**").hasAuthority("FILE")
                 .antMatchers("/api/stream/**").hasAuthority("STREAM")
                 .antMatchers("/api/ddns/**").hasAuthority("DDNS")

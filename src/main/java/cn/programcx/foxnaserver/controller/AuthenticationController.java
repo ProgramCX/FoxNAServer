@@ -1,7 +1,6 @@
 package cn.programcx.foxnaserver.controller;
 
 import cn.programcx.foxnaserver.service.AuthenticationService;
-import cn.programcx.foxnaserver.service.UserDetailService;
 import cn.programcx.foxnaserver.util.JwtUtil;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,9 +11,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,6 +35,7 @@ public class AuthenticationController {
     private ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
 
         try{
+            authenticationService.checkUserStatus(loginRequest.getUsername());
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
             );
@@ -57,7 +55,7 @@ public class AuthenticationController {
             return ResponseEntity.status(401).body("Invalid username or password");
         } catch (Exception e) {
             System.out.println("Login error: " + e.getMessage());
-            return ResponseEntity.status(401).body("Login failed");
+            return ResponseEntity.status(401).body("Login failed"+e.getMessage());
         }
 
 

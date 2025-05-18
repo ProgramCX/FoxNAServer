@@ -47,4 +47,15 @@ public class AuthenticationService {
 
         return true;
     }
+
+    public void checkUserStatus(String username) throws Exception{
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getUserName, username);
+        User user = userMapper.selectOne(queryWrapper);
+        if (user != null) {
+            if(!user.getState().equals("enabled")){
+                throw new Exception("用户已被禁用！");
+            }
+        }
+    }
 }
