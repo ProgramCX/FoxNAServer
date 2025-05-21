@@ -26,8 +26,8 @@ public class BroadcastJob extends QuartzJobBean {
         try (InputStream inputStream = new FileInputStream(configPath)) {
             props.load(inputStream);
 
-            int port = props.getProperty("server.port")==null || props.getProperty("server.port").isEmpty() ? 25522 : Integer.parseInt(props.getProperty("server.port"));
-
+            int bindPort = props.getProperty("broadcast.port")==null || props.getProperty("broadcast.port").isEmpty() ? 25522 : Integer.parseInt(props.getProperty("broadcast.port"));
+            int port = props.getProperty("server.port")==null || props.getProperty("server.port").isEmpty() ? 8845 : Integer.parseInt(props.getProperty("server.port"));
             //发送广播消息
             DatagramSocket socket = new DatagramSocket();
             socket.setBroadcast(true);
@@ -46,7 +46,7 @@ public class BroadcastJob extends QuartzJobBean {
                     String msg = mapper.writeValueAsString(jsonMap);
 
                     byte[] buf = msg.getBytes();
-                    DatagramPacket packet = new DatagramPacket(buf, buf.length, address, port);
+                    DatagramPacket packet = new DatagramPacket(buf, buf.length, address, bindPort);
 
                     socket.send(packet);
 

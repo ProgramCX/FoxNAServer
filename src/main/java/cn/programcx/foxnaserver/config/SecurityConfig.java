@@ -63,12 +63,15 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
                 .authorizeRequests()
                 .antMatchers("/api/auth/**").permitAll()
+                .antMatchers("/ws/overview/**").permitAll()
                 .antMatchers("/api/status/**").permitAll()// 允许所有用户访问
                 .antMatchers("/api/file/**").hasAuthority("FILE")
                 .antMatchers("/api/stream/**").hasAuthority("STREAM")
                 .antMatchers("/api/ddns/**").hasAuthority("DDNS")
                 .antMatchers("/api/mail/**").hasAuthority("MAIL")
                 .antMatchers("/api/user/**").hasAuthority("USER")
+                .antMatchers("/api/ssh/**").hasAuthority("SSH")
+                .antMatchers("/api/state/**").authenticated()
                 .anyRequest().authenticated(); // 使用表单登录
         return http.build();
     }
