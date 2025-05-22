@@ -29,6 +29,7 @@ public class OverviewWebsocket implements StatusCallback {
     public OverviewWebsocket() {
         System.out.println("🟩 OverviewWebsocket 实例创建");
     }
+
     @OnOpen
     public void onOpen(Session session) {
         String query = session.getQueryString();
@@ -69,6 +70,7 @@ public class OverviewWebsocket implements StatusCallback {
         statusService.stopMonitor(session.getId());
         sessions.remove(session);
     }
+
     @Override
     public void onStatusCallback(Map<String, Object> status) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
