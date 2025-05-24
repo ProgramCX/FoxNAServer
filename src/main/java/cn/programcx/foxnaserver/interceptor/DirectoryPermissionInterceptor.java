@@ -10,6 +10,11 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 @Component
@@ -18,12 +23,25 @@ public class DirectoryPermissionInterceptor implements HandlerInterceptor {
     ResourceMapper resourceMapper;
 
 
-    private boolean hasPermission(String userName, String directory, String method) {
+    private boolean hasPermission(String userName, String directory, String method) throws IOException {
         LambdaQueryWrapper<Resource> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Resource::getOwnerName, userName).eq(Resource::getPermissionType, method);
         List<Resource> resources = resourceMapper.selectList(queryWrapper);
+
+        String normalizedPath = Paths.get(directory).normalize().toString();
+
+        String raw = directory.replace("\\", "/");
+        if (raw.contains("../")) {
+            return false;
+        }
+
+        if(containsSymlink(Paths.get(raw))){
+            return false;
+        }
+
         for (Resource resource : resources) {
-            if (directory.contains(resource.getFolderName()) && directory.startsWith(resource.getFolderName())) {
+            String allowedPath = Paths.get(resource.getFolderName()).normalize().toString();
+            if (normalizedPath.startsWith(allowedPath)) {
                 return true;
             }
         }
@@ -35,21 +53,58 @@ public class DirectoryPermissionInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String userName = JwtUtil.getCurrentUsername();
         String path = request.getParameter("path");
-        String method = request.getParameter("method");
+        String methodType = request.getMethod();
+
         if (path == null || path.isEmpty()) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            return false;
+            String newPath = request.getParameter("newPath");
+            String oldPath = request.getParameter("oldPath");
+            if (newPath == null || newPath.isEmpty() || oldPath == null || oldPath.isEmpty()) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                return false;
+            }
+
+            if(!hasPermission(userName, oldPath, "Read") || !hasPermission(userName, newPath, "Write")) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                return false;
+            }
+        }else{
+
+            String method;
+
+            if ("POST".equalsIgnoreCase(methodType)) {
+                method = "WRITE";
+            } else if ("GET".equalsIgnoreCase(methodType)) {
+                method = "READ";
+            } else if ("PUT".equalsIgnoreCase(methodType)) {
+                method = "WRITE";
+            } else if ("DELETE".equalsIgnoreCase(methodType)) {
+                method = "WRITE";
+            } else if ("PATCH".equalsIgnoreCase(methodType)) {
+                method = "WRITE";
+            } else {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                return false;
+            }
+
+            if (!hasPermission(userName, path, method)) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                return false;
+            }
         }
-        if(method == null || method.isEmpty()) {
-            method = "Read";
-        }
-        if (!hasPermission(userName, path, method)) {
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            return false;
-        }
+
         return true;
 
     }
 
+    public boolean containsSymlink(Path path) throws IOException {
+        Path current = path;
+        while (current != null) {
+            if (Files.isSymbolicLink(current)) {
+                return true;
+            }
+            current = current.getParent();
+        }
+        return false;
+    }
 }
 
