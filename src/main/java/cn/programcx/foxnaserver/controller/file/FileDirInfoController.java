@@ -1,5 +1,7 @@
 package cn.programcx.foxnaserver.controller.file;
 
+import cn.programcx.foxnaserver.mapper.ResourceMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -99,9 +101,12 @@ public class FileDirInfoController {
         retMap.put("to", to);
         retMap.put("page", page);
         retMap.put("pageSize", pageSize);
+        retMap.put("totalPage", total / pageSize + (total % pageSize == 0 ? 0 : 1));
 
         return ResponseEntity.ok(retMap);
     }
+
+
 
     private int compareFileType(String type1, String type2) {
         if (type1 == null && type2 == null) return 0;
