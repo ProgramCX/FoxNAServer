@@ -1,5 +1,6 @@
 package cn.programcx.foxnaserver.controller.file;
 
+import cn.programcx.foxnaserver.annotation.CheckFilePermission;
 import cn.programcx.foxnaserver.mapper.ResourceMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import java.util.*;
 @RequestMapping("/api/file/info")
 public class FileDirInfoController {
 
+    @CheckFilePermission(type = "Read", paramFields = {"path"})
     @GetMapping("/getList")
     public ResponseEntity<?> getList(String path,
                                      @RequestParam(defaultValue = "1") int page,
@@ -43,7 +45,7 @@ public class FileDirInfoController {
             return ResponseEntity.ok(retMap);
         }
 
-       
+
         List<Map<String, Object>> list = new ArrayList<>();
         for (File file : files) {
             Map<String, Object> map = new HashMap<>();
@@ -77,7 +79,7 @@ public class FileDirInfoController {
 
                 int cmp;
                 if (o1 instanceof String && o2 instanceof String) {
-                    cmp = ((String) o1).compareToIgnoreCase((String) o2)  ;
+                    cmp = ((String) o1).compareToIgnoreCase((String) o2);
                 } else if (o1 instanceof Number && o2 instanceof Number) {
                     cmp = Long.compare(((Number) o1).longValue(), ((Number) o2).longValue());
                 } else if (o1 instanceof Comparable && o2 instanceof Comparable) {
@@ -105,7 +107,6 @@ public class FileDirInfoController {
 
         return ResponseEntity.ok(retMap);
     }
-
 
 
     private int compareFileType(String type1, String type2) {
