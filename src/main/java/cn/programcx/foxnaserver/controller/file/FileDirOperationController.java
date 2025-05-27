@@ -200,7 +200,7 @@ public class FileDirOperationController {
     }
 
 
-    @CheckFilePermission(type = "Write", bodyFields = {"pathList"}, bodyMapKeyNames = {"oldPath", "newPath"})
+    @CheckFilePermission(type = "Write", bodyFields = {"pathsList"}, bodyMapKeyNames = {"oldPath", "newPath"})
     @PostMapping("copy")
     public ResponseEntity<?> copy(@RequestBody List<Map<String, String>> pathsList, HttpServletRequest request) {
         Map<String, Object> resultMap = new HashMap<>();

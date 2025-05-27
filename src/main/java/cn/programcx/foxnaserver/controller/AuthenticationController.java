@@ -41,7 +41,7 @@ public class AuthenticationController {
     @PostMapping("/login")
     private ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletRequest request) {
 
-        try{
+        try {
             authenticationService.checkUserStatus(loginRequest.getUsername());
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
@@ -55,19 +55,18 @@ public class AuthenticationController {
             log.info("[{}]用户登录成功！", loginRequest.getUsername());
 
             return ResponseEntity.ok(token);
-        }
-        catch (UsernameNotFoundException e) {
-            System.out.println("Username not found: " + e.getMessage());
+        } catch (UsernameNotFoundException e) {
+            log.info("[{}]用户登录失败，找不到用户名！", loginRequest.getUsername());
             errorLogService.insertErrorLog(request, e, "找不到用户名: " + loginRequest.getUsername());
             return ResponseEntity.status(401).body("Invalid username or password");
         } catch (BadCredentialsException e) {
-            System.out.println("Invalid credentials: " + e.getMessage());
+            log.info("[{}]用户登录失败，凭据无效！", loginRequest.getUsername());
             errorLogService.insertErrorLog(request, e, "无效的凭据: " + loginRequest.getUsername());
             return ResponseEntity.status(401).body("Invalid username or password");
         } catch (Exception e) {
-            System.out.println("Login error: " + e.getMessage());
+            log.info("[{}]用户登录失败，发生异常：{}", loginRequest.getUsername(), e.getMessage());
             errorLogService.insertErrorLog(request, e, "登录错误: " + loginRequest.getUsername());
-            return ResponseEntity.status(401).body("Login failed"+e.getMessage());
+            return ResponseEntity.status(401).body("Login failed" + e.getMessage());
         }
 
 
@@ -75,11 +74,11 @@ public class AuthenticationController {
 
     @PostMapping("iniAdmin")
     private ResponseEntity<?> iniAdmin(HttpServletRequest request) {
-        if(authenticationService.registerAdmin()){
+        if (authenticationService.registerAdmin()) {
             log.info("管理员用户注册成功！");
 
             return ResponseEntity.status(200).body("123456");
-        }else{
+        } else {
             log.error("管理员用户注册失败，因为管理员已存在！");
             errorLogService.insertErrorLog(request, new Exception("Admin already exists"), "管理员用户注册失败，因为管理员已存在！");
 

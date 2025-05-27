@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/common")
 public class CommonController {
