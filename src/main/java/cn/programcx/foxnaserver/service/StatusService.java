@@ -4,6 +4,7 @@ import cn.programcx.foxnaserver.callback.StatusCallback;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import oshi.SystemInfo;
 import oshi.hardware.CentralProcessor;
@@ -15,6 +16,7 @@ import oshi.software.os.OperatingSystem;
 import java.util.*;
 import java.util.concurrent.*;
 
+@Slf4j
 @Service
 public class StatusService {
 
@@ -90,7 +92,7 @@ public class StatusService {
             info.put("disk", getDiskInfo());
             info.put("network", getNetworkInfo());
         } catch (Exception e) {
-            e.printStackTrace();
+           log.error("获取系统资源信息失败:{}", e.getMessage());
         }
     }
 

@@ -1,26 +1,32 @@
 package cn.programcx.foxnaserver.controller.file;
 
-import cn.programcx.foxnaserver.mapper.ResourceMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import cn.programcx.foxnaserver.annotation.CheckFilePermission;
+
+import cn.programcx.foxnaserver.util.JwtUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.util.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/file/info")
 public class FileDirInfoController {
 
+    @CheckFilePermission(type = "Read", paramFields = {"path"})
     @GetMapping("/getList")
     public ResponseEntity<?> getList(String path,
                                      @RequestParam(defaultValue = "1") int page,
                                      @RequestParam(defaultValue = "200") int pageSize,
                                      @RequestParam(value = "sortBy", defaultValue = "name") String sortBy,
-                                     @RequestParam(value = "order", defaultValue = "asc") String order) {
+                                     @RequestParam(value = "order", defaultValue = "asc") String order
+                                     ) {
         File dir = new File(path);
         Map<String, Object> retMap = new HashMap<>();
 
@@ -43,7 +49,7 @@ public class FileDirInfoController {
             return ResponseEntity.ok(retMap);
         }
 
-       
+
         List<Map<String, Object>> list = new ArrayList<>();
         for (File file : files) {
             Map<String, Object> map = new HashMap<>();
@@ -77,7 +83,7 @@ public class FileDirInfoController {
 
                 int cmp;
                 if (o1 instanceof String && o2 instanceof String) {
-                    cmp = ((String) o1).compareToIgnoreCase((String) o2)  ;
+                    cmp = ((String) o1).compareToIgnoreCase((String) o2);
                 } else if (o1 instanceof Number && o2 instanceof Number) {
                     cmp = Long.compare(((Number) o1).longValue(), ((Number) o2).longValue());
                 } else if (o1 instanceof Comparable && o2 instanceof Comparable) {
@@ -103,9 +109,11 @@ public class FileDirInfoController {
         retMap.put("pageSize", pageSize);
         retMap.put("totalPage", total / pageSize + (total % pageSize == 0 ? 0 : 1));
 
+        log.info("[{}]获取目录列表成功: {}, 页码: {}, 每页大小: {}, 排序字段: {}, 排序方式: {}, 本页实际个数：{}", JwtUtil.getCurrentUsername(),
+                path, page, pageSize, sortBy, order, pageList.size());
+
         return ResponseEntity.ok(retMap);
     }
-
 
 
     private int compareFileType(String type1, String type2) {

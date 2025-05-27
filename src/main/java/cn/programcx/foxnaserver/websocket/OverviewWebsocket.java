@@ -27,7 +27,7 @@ public class OverviewWebsocket implements StatusCallback {
     private static final Set<Session> sessions = new CopyOnWriteArraySet<>();
 
     public OverviewWebsocket() {
-        System.out.println("🟩 OverviewWebsocket 实例创建");
+
     }
 
     @OnOpen
@@ -41,7 +41,7 @@ public class OverviewWebsocket implements StatusCallback {
                 try {
                     session.close(new CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, "非法 token"));
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    log.error("[{}] WebSocket 连接关闭失败: {}", JwtUtil.getCurrentUsername(), e.getMessage());
                 }
                 return;
             }
@@ -81,7 +81,7 @@ public class OverviewWebsocket implements StatusCallback {
                 try {
                     session.getBasicRemote().sendText(json);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.error("[{}] WebSocket 发送消息失败: {}", JwtUtil.getCurrentUsername(), e.getMessage());
                 }
             }
         }

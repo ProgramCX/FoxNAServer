@@ -3,6 +3,7 @@ package cn.programcx.foxnaserver.controller;
 import cn.programcx.foxnaserver.entity.Permission;
 import cn.programcx.foxnaserver.mapper.PermissionMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

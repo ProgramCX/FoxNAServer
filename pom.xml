@@ -85,6 +85,11 @@
             <artifactId>oshi-core</artifactId>
             <version>6.4.4</version>
         </dependency>
+        <!-- Spring AOP -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
     </dependencies>
     <dependencyManagement>
         <dependencies>
