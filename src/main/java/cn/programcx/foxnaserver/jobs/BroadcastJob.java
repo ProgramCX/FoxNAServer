@@ -49,8 +49,6 @@ public class BroadcastJob extends QuartzJobBean {
                     DatagramPacket packet = new DatagramPacket(buf, buf.length, address, bindPort);
 
                     socket.send(packet);
-
-                    System.out.println("Sent " + msg + " to " + addr);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

@@ -1,17 +1,20 @@
 package cn.programcx.foxnaserver.controller.file;
 
 import cn.programcx.foxnaserver.annotation.CheckFilePermission;
-import cn.programcx.foxnaserver.mapper.ResourceMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import cn.programcx.foxnaserver.util.JwtUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.util.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/file/info")
 public class FileDirInfoController {
@@ -22,7 +25,8 @@ public class FileDirInfoController {
                                      @RequestParam(defaultValue = "1") int page,
                                      @RequestParam(defaultValue = "200") int pageSize,
                                      @RequestParam(value = "sortBy", defaultValue = "name") String sortBy,
-                                     @RequestParam(value = "order", defaultValue = "asc") String order) {
+                                     @RequestParam(value = "order", defaultValue = "asc") String order
+                                     ) {
         File dir = new File(path);
         Map<String, Object> retMap = new HashMap<>();
 
@@ -104,6 +108,9 @@ public class FileDirInfoController {
         retMap.put("page", page);
         retMap.put("pageSize", pageSize);
         retMap.put("totalPage", total / pageSize + (total % pageSize == 0 ? 0 : 1));
+
+        log.info("[{}]获取目录列表成功: {}, 页码: {}, 每页大小: {}, 排序字段: {}, 排序方式: {}, 本页实际个数：{}", JwtUtil.getCurrentUsername(),
+                path, page, pageSize, sortBy, order, pageList.size());
 
         return ResponseEntity.ok(retMap);
     }
