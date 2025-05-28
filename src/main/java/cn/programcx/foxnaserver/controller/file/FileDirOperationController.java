@@ -78,6 +78,7 @@ public class FileDirOperationController {
         if (!failedPaths.isEmpty()) {
             resultMap.put("status", "failed");
             resultMap.put("successCount", paths.size() - failedPaths.size());
+            resultMap.put("failedCount", failedPaths.size());
             resultMap.put("totalCount", paths.size());
             resultMap.put("failedPaths", failedPaths);
 
@@ -333,6 +334,11 @@ public class FileDirOperationController {
     }
 
     private void copyDirectory(Path sourcePath, Path targetPath, List<Map<String, Object>> failedList, HttpServletRequest request) {
+        if(targetPath.startsWith(sourcePath)) {
+            addFailedPath(failedList, List.of(sourcePath.toAbsolutePath().toString(), targetPath.toAbsolutePath().toString()), "不能将目录复制到其自身或子目录中");
+            errorLogService.insertErrorLog(request, new IOException("不能将目录复制到其自身或子目录中"), "复制目录" + sourcePath + "到" + targetPath + "失败：不能将目录复制到其自身或子目录中");
+            return;
+        }
         try {
             Files.walk(sourcePath).forEach(src -> {
                 try {
@@ -347,7 +353,7 @@ public class FileDirOperationController {
                 } catch (IOException e) {
                     errorLogService.insertErrorLog(request, e, "复制文件" + sourcePath + "到" + targetPath + "失败:" + e.getMessage());
 
-                    addFailedPath(failedList, List.of(sourcePath, targetPath), "复制失败：" + e.getMessage());
+                    addFailedPath(failedList, List.of(sourcePath.toAbsolutePath().toString(), targetPath.toAbsolutePath().toString()), "复制失败：" + e.getMessage());
                 }
             });
         } catch (IOException e) {

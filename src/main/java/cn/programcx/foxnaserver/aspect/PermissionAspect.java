@@ -132,7 +132,7 @@ public class PermissionAspect {
             String userName = JwtUtil.getCurrentUsername();
 
             if (!hasPermission(userName, normalizedPath, methodType)) {
-                throw new NoPermissionException("没有权限访问路径: " + normalizedPath);
+                throw new NoPermissionException("没有权限操作或访问路径: " + normalizedPath);
             }
         }
 
