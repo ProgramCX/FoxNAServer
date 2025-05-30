@@ -79,8 +79,8 @@ public class AuthenticationController {
 
             return ResponseEntity.status(200).body("123456");
         } else {
-            log.error("管理员用户注册失败，因为管理员已存在！");
-            errorLogService.insertErrorLog(request, new Exception("Admin already exists"), "管理员用户注册失败，因为管理员已存在！");
+//            log.error("管理员用户注册失败，因为管理员已存在！");
+//            errorLogService.insertErrorLog(request, new Exception("Admin already exists"), "管理员用户注册失败，因为管理员已存在！");
 
             return ResponseEntity.status(HttpStatus.CONFLICT).body("admin already registered");
         }

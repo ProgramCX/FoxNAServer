@@ -287,49 +287,30 @@ public class FileDirOperationController {
 
     @CheckFilePermission(type = "Write", paramFields = {"path"})
     @PostMapping("upload")
-    public ResponseEntity<?> upload(@RequestParam("file") MultipartFile[] file, @RequestParam String path, HttpServletRequest request) throws IOException {
-        //上传文件
-        Map<String, Object> resultMap = new HashMap<>();
-        List<Map<String, Object>> failedPaths = new ArrayList<>();
-        int successCount = 0;
+    public ResponseEntity<?> upload(@RequestParam("file") MultipartFile file, @RequestParam String path, HttpServletRequest request) throws IOException {
 
-        for (MultipartFile f : file) {
-            if (f.isEmpty()) {
+            if (file.isEmpty()) {
                 errorLogService.insertErrorLog(request, new Exception("文件为空！"), "上传文件：文件为空");
-                addFailedPath(failedPaths, f.getOriginalFilename(), "文件为空！");
-                continue;
+                log.error("[{}]上传文件失败，文件名: {}, 目标路径: {}, 错误信息: 文件为空", JwtUtil.getCurrentUsername(), file.getOriginalFilename(), path);
             }
 
             Path targetPath = Paths.get(path);
-            if (!Files.exists(targetPath)) {
-                Files.createDirectories(targetPath);
+            if (!Files.exists(targetPath.getParent())) {
+                Files.createDirectories(targetPath.getParent());
             }
 
             try {
-                File destFile = new File(targetPath.toString(), Objects.requireNonNull(f.getOriginalFilename()));
-                f.transferTo(destFile);
-                successCount++;
+                File destFile = new File(targetPath.toString());
+                file.transferTo(destFile);
             } catch (IOException e) {
-                errorLogService.insertErrorLog(request, e, "上传文件" + f.getOriginalFilename() + "到" + path + "失败" + e.getMessage());
-                addFailedPath(failedPaths, f.getOriginalFilename(), "文件上传失败！");
+                errorLogService.insertErrorLog(request, e, "上传文件" + file.getOriginalFilename() + "到" + path + "失败" + e.getMessage());
+                log.error("[{}]上传文件失败，文件名: {}, 目标路径: {}, 错误信息: {}", JwtUtil.getCurrentUsername(), file.getOriginalFilename(), path, e.getMessage());
+
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("status", "failed", "message", "文件上传失败！", "error", e.getMessage()));
             }
 
-        }
-
-        if (!failedPaths.isEmpty()) {
-            resultMap.put("status", "failed");
-            resultMap.put("totalCount", file.length);
-            resultMap.put("failedCount", file.length - successCount);
-            resultMap.put("totalUpload", successCount);
-            resultMap.put("failedPaths", failedPaths);
-
-            log.error("[{}]上传文件失败，文件数量: {}, 成功数量: {}, 失败数量: {}, 文件数组：{}, 上传目录：{}", JwtUtil.getCurrentUsername(), file.length, successCount, failedPaths.size(), Arrays.toString(file),path);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(resultMap);
-        }
-
-        log.info("[{}]上传文件成功，文件数量: {}, 成功数量: {}, 失败数量: {}, 文件数组：{}, 上传目录：{}", JwtUtil.getCurrentUsername(), file.length, successCount, failedPaths.size(), Arrays.toString(file),path);
-        resultMap.put("status", "success");
-        return ResponseEntity.ok(resultMap);
+            log.info("[{}]上传文件成功，文件名: {}, 目标路径: {}", JwtUtil.getCurrentUsername(), file.getOriginalFilename(), targetPath.toString());
+            return  ResponseEntity.ok(Map.of("status", "success", "message", "文件上传成功！", "fileName", file.getOriginalFilename(), "path", targetPath.toString()));
 
     }
 
