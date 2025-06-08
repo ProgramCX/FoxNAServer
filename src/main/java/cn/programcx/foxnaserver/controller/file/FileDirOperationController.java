@@ -314,6 +314,37 @@ public class FileDirOperationController {
 
     }
 
+    @CheckFilePermission(type = "Write", paramFields = {"path"})
+    @PostMapping("createDir")
+    public ResponseEntity<?> createDir(String path, HttpServletRequest request) {
+        Map<String, Object> resultMap = new HashMap<>();
+        Path dirPath = Paths.get(path);
+
+        resultMap.put("path", dirPath.toString());
+
+        if (Files.exists(dirPath)) {
+            errorLogService.insertErrorLog(request, new IOException("目录已存在！"), "创建目录失败，目录已存在：" + path);
+            resultMap.put("status", "failed");
+            resultMap.put("message", "目录已存在！");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(resultMap);
+        }
+
+
+        try {
+            Files.createDirectories(dirPath);
+            log.info("[{}]创建目录成功，路径: {}", JwtUtil.getCurrentUsername(), path);
+            resultMap.put("status", "success");
+            resultMap.put("message", "目录创建成功！");
+            return ResponseEntity.ok(resultMap);
+        } catch (IOException e) {
+            errorLogService.insertErrorLog(request, e, "创建目录失败：" + e.getMessage());
+            log.error("[{}]创建目录失败，路径: {}, 错误信息: {}", JwtUtil.getCurrentUsername(), path, e.getMessage());
+            resultMap.put("status", "failed");
+            resultMap.put("message", "目录创建失败：" + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(resultMap);
+        }
+    }
+
     private void copyDirectory(Path sourcePath, Path targetPath, List<Map<String, Object>> failedList, HttpServletRequest request) {
         if(targetPath.startsWith(sourcePath)) {
             addFailedPath(failedList, List.of(sourcePath.toAbsolutePath().toString(), targetPath.toAbsolutePath().toString()), "不能将目录复制到其自身或子目录中");
