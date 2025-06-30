@@ -1,7 +1,7 @@
 package cn.programcx.foxnaserver.config;
 
 import cn.programcx.foxnaserver.security.JwtAuthenticationFilter;
-import cn.programcx.foxnaserver.service.UserDetailService;
+import cn.programcx.foxnaserver.service.user.UserDetailService;
 import cn.programcx.foxnaserver.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -61,18 +61,26 @@ public class SecurityConfig {
         http
                 .csrf().disable()
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
-                .authorizeRequests()
-                .antMatchers("/api/auth/**").permitAll()
-                .antMatchers("/ws/overview/**").permitAll()
-                .antMatchers("/api/status/**").permitAll()// 允许所有用户访问
-                .antMatchers("/api/file/**").hasAuthority("FILE")
-                .antMatchers("/api/stream/**").hasAuthority("STREAM")
-                .antMatchers("/api/ddns/**").hasAuthority("DDNS")
-                .antMatchers("/api/mail/**").hasAuthority("MAIL")
-                .antMatchers("/api/user/**").hasAuthority("USER")
-                .antMatchers("/api/ssh/**").hasAuthority("SSH")
-                .antMatchers("/api/state/**").authenticated()
-                .anyRequest().authenticated(); // 使用表单登录
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/ws/overview/**").permitAll()
+                        .requestMatchers("/api/status/**").permitAll() // 允许所有用户访问
+                        .requestMatchers("/doc.html").permitAll()
+                        .requestMatchers("/webjars/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**").permitAll()
+                        .requestMatchers("/favicon.ico").permitAll()
+                        .requestMatchers("/swagger-ui/**").permitAll()
+                        .requestMatchers("/api-docs/**").permitAll()
+                        .requestMatchers("/api/file/**").hasAuthority("FILE")
+                        .requestMatchers("/api/stream/**").hasAuthority("STREAM")
+                        .requestMatchers("/api/ddns/**").hasAuthority("DDNS")
+                        .requestMatchers("/api/mail/**").hasAuthority("MAIL")
+                        .requestMatchers("/api/user/**").hasAuthority("USER")
+                        .requestMatchers("/api/ssh/**").hasAuthority("SSH")
+                        .requestMatchers("/api/state/**").authenticated()
+                        .anyRequest().authenticated()
+                );
         return http.build();
     }
+
 }

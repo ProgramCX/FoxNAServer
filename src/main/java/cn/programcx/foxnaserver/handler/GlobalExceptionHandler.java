@@ -1,9 +1,7 @@
 package cn.programcx.foxnaserver.handler;
 
-import cn.programcx.foxnaserver.entity.ErrorLog;
 import cn.programcx.foxnaserver.exception.NoPermissionException;
-import cn.programcx.foxnaserver.mapper.ErrorLogMapper;
-import cn.programcx.foxnaserver.service.ErrorLogService;
+import cn.programcx.foxnaserver.service.log.ErrorLogService;
 import cn.programcx.foxnaserver.util.JwtUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 @Slf4j

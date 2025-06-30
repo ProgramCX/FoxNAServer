@@ -1,4 +1,4 @@
-package cn.programcx.foxnaserver.service;
+package cn.programcx.foxnaserver.service.auth;
 
 import cn.programcx.foxnaserver.entity.Permission;
 import cn.programcx.foxnaserver.entity.User;

@@ -1,4 +1,4 @@
-package cn.programcx.foxnaserver.service;
+package cn.programcx.foxnaserver.service.status;
 
 import cn.programcx.foxnaserver.callback.StatusCallback;
 import com.fasterxml.jackson.core.JsonProcessingException;

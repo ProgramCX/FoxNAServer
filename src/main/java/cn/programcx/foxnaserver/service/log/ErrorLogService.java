@@ -1,4 +1,4 @@
-package cn.programcx.foxnaserver.service;
+package cn.programcx.foxnaserver.service.log;
 
 import cn.programcx.foxnaserver.entity.ErrorLog;
 import cn.programcx.foxnaserver.mapper.ErrorLogMapper;
@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 
 @Slf4j

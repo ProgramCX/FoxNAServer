@@ -2,7 +2,14 @@ package cn.programcx.foxnaserver.controller.file;
 
 import cn.programcx.foxnaserver.annotation.CheckFilePermission;
 
+import cn.programcx.foxnaserver.dto.file.FileInfo;
+import cn.programcx.foxnaserver.dto.file.PageResponse;
 import cn.programcx.foxnaserver.util.JwtUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,25 +17,28 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.util.*;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/file/info")
+@Tag(name = "FileDirInfo", description = "文件目录信息相关接口")
 public class FileDirInfoController {
 
+    @Operation(
+            summary = "获取目录列表",
+            description = "获取指定目录下的文件和子目录列表，支持分页和排序"
+    )
+    @ApiResponse(responseCode = "200", description = "成功获取目录列表")
     @CheckFilePermission(type = "Read", paramFields = {"path"})
     @GetMapping("/getList")
-    public ResponseEntity<?> getList(String path,
-                                     @RequestParam(defaultValue = "1") int page,
-                                     @RequestParam(defaultValue = "200") int pageSize,
-                                     @RequestParam(value = "sortBy", defaultValue = "name") String sortBy,
-                                     @RequestParam(value = "order", defaultValue = "asc") String order
-                                     ) {
+    public ResponseEntity<PageResponse<FileInfo>> getList(@RequestParam("path") String path,
+                                                          @RequestParam(defaultValue = "1") int page,
+                                                          @RequestParam(defaultValue = "200") int pageSize,
+                                                          @RequestParam(value = "sortBy", defaultValue = "name") String sortBy,
+                                                          @RequestParam(value = "order", defaultValue = "asc") String order) {
         File dir = new File(path);
-        Map<String, Object> retMap = new HashMap<>();
 
         if (!dir.exists()) {
             return ResponseEntity.notFound().build();
@@ -39,43 +49,37 @@ public class FileDirInfoController {
 
         File[] files = dir.listFiles();
         if (files == null || files.length == 0) {
-
-            retMap.put("list", Collections.emptyList());
-            retMap.put("total", 0);
-            retMap.put("from", 0);
-            retMap.put("to", 0);
-            retMap.put("page", page);
-            retMap.put("pageSize", pageSize);
-            return ResponseEntity.ok(retMap);
+            PageResponse<FileInfo> emptyPage = new PageResponse<>();
+            emptyPage.setList(Collections.emptyList());
+            emptyPage.setTotal(0);
+            emptyPage.setFrom(0);
+            emptyPage.setTo(0);
+            emptyPage.setPage(page);
+            emptyPage.setPageSize(pageSize);
+            emptyPage.setTotalPage(0);
+            return ResponseEntity.ok(emptyPage);
         }
 
-
-        List<Map<String, Object>> list = new ArrayList<>();
+        List<FileInfo> list = new ArrayList<>();
         for (File file : files) {
-            Map<String, Object> map = new HashMap<>();
-            map.put("name", file.getName());
-            map.put("path", file.getPath().replace(File.separatorChar, '/'));
-            map.put("size", file.length());
-            map.put("lastModified", file.lastModified());
-            map.put("type", file.isDirectory() ? "directory" : "file");
-            list.add(map);
+            FileInfo info = new FileInfo();
+            info.setName(file.getName());
+            info.setPath(file.getPath().replace(File.separatorChar, '/'));
+            info.setSize(file.length());
+            info.setLastModified(file.lastModified());
+            info.setType(file.isDirectory() ? "directory" : "file");
+            list.add(info);
         }
 
-        // 排序
+        // 排序逻辑不变
         if (sortBy != null && !sortBy.isEmpty()) {
             boolean asc = "asc".equalsIgnoreCase(order);
-            list.sort((m1, m2) -> {
+            list.sort((f1, f2) -> {
+                int typeCmp = compareFileType(f1.getType(), f2.getType());
+                if (typeCmp != 0) return typeCmp;
 
-                String type1 = (String) m1.get("type");
-                String type2 = (String) m2.get("type");
-
-                int typeCmp = compareFileType(type1, type2);
-                if (typeCmp != 0) {
-                    return typeCmp;
-                }
-
-                Object o1 = m1.get(sortBy);
-                Object o2 = m2.get(sortBy);
+                Object o1 = getFieldValue(f1, sortBy);
+                Object o2 = getFieldValue(f2, sortBy);
 
                 if (o1 == null && o2 == null) return 0;
                 if (o1 == null) return asc ? -1 : 1;
@@ -95,26 +99,26 @@ public class FileDirInfoController {
             });
         }
 
-        // 分页
         int total = list.size();
         int from = Math.min((page - 1) * pageSize, total);
         int to = Math.min(from + pageSize, total);
-        List<Map<String, Object>> pageList = list.subList(from, to);
 
-        retMap.put("list", pageList);
-        retMap.put("total", total);
-        retMap.put("from", from);
-        retMap.put("to", to);
-        retMap.put("page", page);
-        retMap.put("pageSize", pageSize);
-        retMap.put("totalPage", total / pageSize + (total % pageSize == 0 ? 0 : 1));
+        List<FileInfo> pageList = list.subList(from, to);
 
-        log.info("[{}]获取目录列表成功: {}, 页码: {}, 每页大小: {}, 排序字段: {}, 排序方式: {}, 本页实际个数：{}", JwtUtil.getCurrentUsername(),
-                path, page, pageSize, sortBy, order, pageList.size());
+        PageResponse<FileInfo> pageResponse = new PageResponse<>();
+        pageResponse.setList(pageList);
+        pageResponse.setTotal(total);
+        pageResponse.setFrom(from);
+        pageResponse.setTo(to);
+        pageResponse.setPage(page);
+        pageResponse.setPageSize(pageSize);
+        pageResponse.setTotalPage(total / pageSize + (total % pageSize == 0 ? 0 : 1));
 
-        return ResponseEntity.ok(retMap);
+        log.info("[{}]获取目录列表成功: {}, 页码: {}, 每页大小: {}, 排序字段: {}, 排序方式: {}, 本页实际个数：{}",
+                JwtUtil.getCurrentUsername(), path, page, pageSize, sortBy, order, pageList.size());
+
+        return ResponseEntity.ok(pageResponse);
     }
-
 
     private int compareFileType(String type1, String type2) {
         if (type1 == null && type2 == null) return 0;
@@ -124,6 +128,21 @@ public class FileDirInfoController {
         if (type1.equalsIgnoreCase(type2)) return 0;
         if ("directory".equalsIgnoreCase(type1)) return -1;
         if ("directory".equalsIgnoreCase(type2)) return 1;
-        return type1.compareToIgnoreCase(type2); // fallback 字符串比较
+        return type1.compareToIgnoreCase(type2);
     }
+
+    /**
+     * 通过反射获取FileInfo的字段值
+     */
+    private Object getFieldValue(FileInfo fileInfo, String fieldName) {
+        switch (fieldName) {
+            case "name": return fileInfo.getName();
+            case "path": return fileInfo.getPath();
+            case "size": return fileInfo.getSize();
+            case "lastModified": return fileInfo.getLastModified();
+            case "type": return fileInfo.getType();
+            default: return null;
+        }
+    }
+
 }

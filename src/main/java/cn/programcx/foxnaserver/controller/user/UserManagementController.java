@@ -1,11 +1,15 @@
-package cn.programcx.foxnaserver.controller;
+package cn.programcx.foxnaserver.controller.user;
 
 import cn.programcx.foxnaserver.entity.Permission;
 import cn.programcx.foxnaserver.entity.Resource;
 import cn.programcx.foxnaserver.entity.User;
-import cn.programcx.foxnaserver.service.ErrorLogService;
-import cn.programcx.foxnaserver.service.UserManagementService;
+import cn.programcx.foxnaserver.service.log.ErrorLogService;
+import cn.programcx.foxnaserver.service.user.UserManagementService;
 import cn.programcx.foxnaserver.util.JwtUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,13 +17,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/user")
+@Tag(name = "UserManagement", description = "用户管理相关接口")
 public class UserManagementController {
 
     @Autowired
@@ -35,6 +40,14 @@ public class UserManagementController {
         List<Resource> resources;
     }
 
+    @Operation(
+            summary = "添加用户",
+            description = "添加新用户，并分配权限和资源"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "用户添加成功"),
+            @ApiResponse(responseCode = "500", description = "请求参数错误或用户已存在")
+    })
     @PostMapping("/addUser")
     public ResponseEntity<?> addUser(@RequestBody UserPermissionResourceDTO dto, HttpServletRequest request) {
         try{
@@ -53,8 +66,14 @@ public class UserManagementController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
+    @Operation(summary = "删除用户",
+            description = "删除指定用户名的用户")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "用户删除成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误或用户不存在")
+    })
     @PostMapping("delUser")
-    public ResponseEntity<?> delUser(@RequestParam String userName,HttpServletRequest request) {
+    public ResponseEntity<?> delUser(@RequestParam("userName") String userName,HttpServletRequest request) {
        try {
            userManagementService.delUser(userName);
 
@@ -69,8 +88,14 @@ public class UserManagementController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @Operation(summary = "封禁用户",
+            description = "封禁指定用户名的用户")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "用户封禁成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误或用户不存在")
+    })
     @PostMapping("blockUser")
-    public ResponseEntity<?> blockUser(@RequestParam String userName,HttpServletRequest request) {
+    public ResponseEntity<?> blockUser(@RequestParam("userName") String userName,HttpServletRequest request) {
         try {
             userManagementService.blockUser(userName);
             return new ResponseEntity<>(HttpStatus.OK);
@@ -81,6 +106,12 @@ public class UserManagementController {
         }
     }
 
+    @Operation(summary = "修改用户密码",
+            description = "修改指定用户名的用户密码")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "用户密码修改成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误或用户不存在")
+    })
     @PostMapping("changePassword")
     public ResponseEntity<?> changePassword(@RequestBody Map<String,String> map,HttpServletRequest request) {
         String password = map.get("password");

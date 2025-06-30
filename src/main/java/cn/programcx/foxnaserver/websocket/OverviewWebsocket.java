@@ -1,7 +1,7 @@
 package cn.programcx.foxnaserver.websocket;
 
 import cn.programcx.foxnaserver.callback.StatusCallback;
-import cn.programcx.foxnaserver.service.StatusService;
+import cn.programcx.foxnaserver.service.status.StatusService;
 import cn.programcx.foxnaserver.util.JwtUtil;
 import cn.programcx.foxnaserver.util.SpringContextUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -9,8 +9,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import javax.websocket.*;
-import javax.websocket.server.ServerEndpoint;
+import jakarta.websocket.*;
+import jakarta.websocket.server.ServerEndpoint;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
