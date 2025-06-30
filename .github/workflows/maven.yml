@@ -15,12 +15,11 @@ on:
     branches: [ "master" ]
     
 permissions:
-  contents: read
+  contents: write
   id-token: write
   actions: read
   security-events: write
   packages: read
-  dependencies: write
   
 jobs:
   build:
