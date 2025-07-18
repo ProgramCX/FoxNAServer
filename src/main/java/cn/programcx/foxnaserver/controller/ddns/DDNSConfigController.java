@@ -15,12 +15,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RestController
@@ -121,13 +119,13 @@ public class DDNSConfigController {
             )
     })
     @DeleteMapping("/delAccessKey")
-    public ResponseEntity<String> delAccessKey(@RequestParam String accessSecretId) {
-        boolean removed = ddnsAccessSecretService.removeById(accessSecretId);
+    public ResponseEntity<String> delAccessKey(@RequestParam("id") String id) {
+        boolean removed = ddnsAccessSecretService.removeById(id);
         if (removed) {
-            log.info("[{}]删除DDNS访问密钥成功: id为{}", JwtUtil.getCurrentUsername(), accessSecretId);
+            log.info("[{}]删除DDNS访问密钥成功: id为{}", JwtUtil.getCurrentUsername(), id);
             return ResponseEntity.ok("AccessKey 删除成功");
         } else {
-            log.info("[{}]删除DDNS访问密钥失败: id为{}", JwtUtil.getCurrentUsername(), accessSecretId);
+            log.info("[{}]删除DDNS访问密钥失败: id为{}", JwtUtil.getCurrentUsername(), id);
             return ResponseEntity.status(500).body("AccessKey 删除失败");
         }
     }

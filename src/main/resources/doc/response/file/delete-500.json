@@ -1,0 +1,12 @@
+{
+    "failedCount": 1,
+    "failedPaths": [
+      {
+        "path": "D:/23793551581746544152.mp4",
+        "error": "路径不存在"
+      }
+    ],
+    "successCount": 1,
+    "totalCount": 2,
+    "status": "failed"
+  }
