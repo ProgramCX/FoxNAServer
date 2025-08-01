@@ -15,16 +15,16 @@ public class AccessSecret {
     private Long id;
 
     @Schema(
-            description = "访问密钥",
+            description = "访问密钥Key",
             example = "1234567890abcdef"
     )
-    private String accessId;
+    private String accessKey;
 
     @Schema(
-            description = "访问密钥Key",
+            description = "访问密钥Secret",
             example = "abcdef1234567890"
     )
-    private String accessKey;
+    private String accessSecret;
 
     @Schema(
             description = "访问名称",

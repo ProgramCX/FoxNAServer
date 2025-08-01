@@ -29,8 +29,11 @@ public class AccessTask {
     @Schema(description = "IP地址", example = "127.0.0.1")
     private String taskIp;
 
-    @Schema(description = "域名", example = "1")
-    private String domain; // 关联的域名
+    @Schema(description = "域名RR记录", example = "www")
+    private String domainRr; // 关联的域名
+
+    @Schema(description = "主域名", example = "example.com")
+    private String mainDomain; // 主域名
 
     @Schema(description = "DNS Secret ID", example = "1")
     private Long dnsSecretId; // 关联的访问密钥ID

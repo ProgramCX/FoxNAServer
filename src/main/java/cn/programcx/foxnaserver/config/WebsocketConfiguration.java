@@ -14,6 +14,4 @@ public class WebsocketConfiguration {
       log.info("WebsocketConfiguration: Initializing ServerEndpointExporter bean");
         return new ServerEndpointExporter();
     }
-
-
 }

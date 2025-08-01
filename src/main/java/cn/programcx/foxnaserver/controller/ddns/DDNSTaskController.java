@@ -4,7 +4,6 @@ import cn.programcx.foxnaserver.entity.AccessSecret;
 import cn.programcx.foxnaserver.entity.AccessTask;
 import cn.programcx.foxnaserver.service.ddns.DDNSAccessSecretService;
 import cn.programcx.foxnaserver.service.ddns.DDNSTaskService;
-import cn.programcx.foxnaserver.service.ddns.impl.DDNSTaskServiceImpl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -13,7 +12,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.ibatis.annotations.Delete;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -209,7 +207,7 @@ public class DDNSTaskController {
                 queryWrapper
                         .like(AccessTask::getTaskName, keyword)
                         .or()
-                        .like(AccessTask::getDomain, keyword);
+                        .like(AccessTask::getDomainRr, keyword);
             }
 
             IPage<AccessTask> result = ddnsTaskService.page(pageRequest, queryWrapper);

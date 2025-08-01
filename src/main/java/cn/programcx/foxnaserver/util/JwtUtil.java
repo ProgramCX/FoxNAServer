@@ -16,8 +16,6 @@ import java.util.stream.Collectors;
 import cn.programcx.foxnaserver.config.JwtProperties;
 @Component
 public class JwtUtil {
-
-
     private final JwtProperties jwtProperties;
 
     // 构造注入配置
