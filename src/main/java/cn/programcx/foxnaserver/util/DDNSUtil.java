@@ -16,30 +16,33 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 @Slf4j
 public class DDNSUtil {
-    @Getter
-    private static DDNSUtil instance = new DDNSUtil();
 
     private OkHttpClient client = new OkHttpClient();
     @Autowired
     private AccessTaskMapper accessTaskMapper;
 
-    private DDNSUtil() {
-
-    }
+    @Autowired
+    private LANIPUtil lanIPUtil;
 
     @Autowired
     private AccessSecretMapper accessSecretMapper;
 
-    public String getLocalIpv4Ip() throws Exception {
+    public String getLocalIpv4Ip(boolean isPublicIp) throws Exception {
+        if(!isPublicIp) {
+            String ip = lanIPUtil.getLocalIPv4();
+            if(ip != null && !ip.isEmpty()) {
+                return ip;
+            }else{
+                throw new Exception("无法获取本地IPv4地址，请检查网络连接或配置。");
+            }
+        }
         Request request = new Request.Builder().url("https://4.ipw.cn/").build();
         String ip;
         try (Response response = client.newCall(request).execute()) {
@@ -58,13 +61,21 @@ public class DDNSUtil {
         return ip;
     }
 
-    public String getLocalIpv6Ip() throws Exception {
+    public String getLocalIpv6Ip(boolean isPublicIp) throws Exception {
+        if(!isPublicIp) {
+            String ip = lanIPUtil.getLocalIPv6();
+            if(ip != null && !ip.isEmpty()) {
+                return ip;
+            }else{
+                String name = lanIPUtil.getLocalIPv6();
+                throw new Exception("无法获取本地IPv4地址，请检查网络连接或配置。");
+            }
+        }
         Request request = new Request.Builder().url("https://6.ipw.cn/").build();
         String ip;
         try (Response response = client.newCall(request).execute()) {
             if (response.isSuccessful()) {
                 ip = response.body().string();
-
             } else {
                 log.error("无法获取本地IPv4地址，HTTP状态码: {}", response.code());
                 throw new Exception("无法获取本地IPv4地址，HTTP状态码: " + response.code());
@@ -111,8 +122,15 @@ public class DDNSUtil {
 
         boolean foundRecord = false;
 
-        String ip = isIpv4 ? getLocalIpv4Ip() : getLocalIpv6Ip();
-        log.info("当前IP地址: {}", ip);
+        String ip = "";
+        try {
+            ip = isIpv4 ? getLocalIpv4Ip(task.getIsPublicIp() != 0) : getLocalIpv6Ip(task.getIsPublicIp() != 0);
+            log.info("已获取当前IP地址: {}", ip);
+        }catch (Exception e){
+            log.error("获取IP地址失败: {}", e.getMessage());
+            throw new Exception(e.getMessage());
+        }
+
         try {
             long totalPages = 0L;
             long currentPage = 1L;
@@ -146,6 +164,7 @@ public class DDNSUtil {
                             client.updateDomainRecord(updateDomainRecordRequest);
                             log.info("已更新DNS记录: {}.{} -> {}", task.getDomainRr(), task.getMainDomain(), ip);
                         } catch (Exception e) {
+
                             throw new RuntimeException(e);
                         }
                     }
@@ -158,10 +177,12 @@ public class DDNSUtil {
             } while (currentPage <= totalPages);
 
         } catch (TeaException error) {
+
             log.error("Error occurred while modifying DNS record: {}", error.getMessage());
             log.warn("Please check the following recommendation: {}", error.getData().get("Recommend"));
             throw new Exception(error.getMessage());
         } catch (Exception _error) {
+
             TeaException error = new TeaException(_error.getMessage(), _error);
             log.error("Error occurred while modifying DNS record: {}", error.getMessage());
             log.warn("Please check the following recommendation: {}", error.getData().get("Recommend"));

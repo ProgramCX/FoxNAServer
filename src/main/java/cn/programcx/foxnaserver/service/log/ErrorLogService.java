@@ -40,6 +40,29 @@ public class ErrorLogService {
         }
     }
 
+    public void insertErrorLog(String message,Exception e,String moduleName,String method,String uri,String ipAddress) {
+        try{
+            ErrorLog errorLog = new ErrorLog();
+            errorLog.setModuleName(moduleName);
+            errorLog.setErrorMessage(message);
+            errorLog.setParams("");
+            errorLog.setMethod(method);
+            errorLog.setUri(uri);
+            errorLog.setIpAddress("");
+            errorLog.setStackTrace(getStackTraceAsString(e));
+            errorLog.setExceptionType(e.getClass().getName());
+            errorLog.setUserName("system");
+            errorLog.setCreatedTime(LocalDateTime.now());
+            errorLogMapper.insert(errorLog);
+            log.error("Error occurred in module: {}, URI: {}, Method: {}, Params: {}, IP: {}, Message: {}, StackTrace: {}",
+                    errorLog.getModuleName(), errorLog.getUri(), errorLog.getMethod(),
+                    errorLog.getParams(), errorLog.getIpAddress(), errorLog.getErrorMessage(), errorLog.getStackTrace());
+            log.info("{}-插入错误日志成功: {}", errorLog.getId(), message);
+        } catch (Exception ex) {
+            log.error("插入错误日志失败", ex);
+        }
+    }
+
     private String getParamAsJSON(HttpServletRequest request) {
         try {
             ObjectMapper mapper = new ObjectMapper();

@@ -46,4 +46,10 @@ public class AccessTask {
 
     @Schema(description  = "ip类型", example = "ipv4")
     private String ipType;
+
+    @Schema(description = "是否为公网IP", example = "0")
+    private int isPublicIp; // 是否为公网IP，0-否，1-是
+
+    @Schema(description = "上一次是否失败", example = "false")
+    private boolean lastFailed; 
 }

@@ -2,6 +2,7 @@ package cn.programcx.foxnaserver.jobs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.scheduling.quartz.QuartzJobBean;
@@ -15,6 +16,7 @@ import java.util.*;
 import java.util.Enumeration;
 import java.util.Properties;
 
+@Slf4j
 public class BroadcastJob extends QuartzJobBean {
     @SneakyThrows
     @Override
@@ -49,6 +51,7 @@ public class BroadcastJob extends QuartzJobBean {
                     DatagramPacket packet = new DatagramPacket(buf, buf.length, address, bindPort);
 
                     socket.send(packet);
+                    log.info("发送广播消息到 {}:{}", addr, bindPort);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

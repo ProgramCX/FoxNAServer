@@ -1,5 +1,6 @@
 package cn.programcx.foxnaserver.controller.ddns;
 
+import cn.programcx.foxnaserver.dto.ddns.DDNSTaskStatus;
 import cn.programcx.foxnaserver.entity.AccessSecret;
 import cn.programcx.foxnaserver.entity.AccessTask;
 import cn.programcx.foxnaserver.service.ddns.DDNSAccessSecretService;
@@ -8,6 +9,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,6 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 @Slf4j
@@ -153,7 +159,7 @@ public class DDNSTaskController {
                     )
             }
     )
-    @PostMapping("/enable")
+    @PutMapping("/enable")
     public ResponseEntity<?> enableDDNSTask(@RequestParam("id") Long taskId) {
         try {
             ddnsTaskService.enableTask(taskId);
@@ -181,7 +187,7 @@ public class DDNSTaskController {
                     )
             }
     )
-    @PostMapping("/disable")
+    @PutMapping("/disable")
     public ResponseEntity<?> disableDDNSTask(@RequestParam("id") Long taskId) {
         try {
             ddnsTaskService.disableTask(taskId);
@@ -193,7 +199,110 @@ public class DDNSTaskController {
         }
     }
 
+    @Operation(
+            summary = "重启DDNS任务",
+            description = "重启DDNS任务"
+    )
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "任务重启成功"
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "任务未找到或重启失败"
+                    )
+            }
+    )
+    @PutMapping("/restart")
+    public ResponseEntity<?> restartDDNSTask(@RequestParam("id") Long taskId) {
+        try {
+            ddnsTaskService.restartTask(taskId);
+            log.info("DDNS任务重启成功，taskId = {}", taskId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("重启DDNS任务失败，taskId = {}：{}", taskId, e.getMessage());
+            return ResponseEntity.status(404).body("Task not found or restart failed");
+        }
+    }
 
+    @Operation(
+            summary = "暂停DDNS任务",
+            description = "暂停DDNS任务"
+    )
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "任务暂停成功"
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "任务未找到或暂停失败"
+                    )
+            }
+    )
+    @PutMapping("/pause")
+    public ResponseEntity<?> pauseDDNSTask(@RequestParam("id") Long taskId) {
+        try {
+            ddnsTaskService.pauseTask(taskId);
+            log.info("DDNS任务暂停成功，taskId = {}", taskId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("暂停DDNS任务失败，taskId = {}：{}", taskId, e.getMessage());
+            return ResponseEntity.status(404).body("Task not found or pause failed");
+        }
+    }
+
+    @Operation(
+            summary = "恢复DDNS任务",
+            description = "恢复暂停的DDNS任务"
+    )
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "任务恢复成功"
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "任务未找到或恢复失败"
+                    )
+            }
+    )
+    @PutMapping("/resume")
+    public ResponseEntity<?> resumeDDNSTask(@RequestParam("id") Long taskId) {
+        try {
+            ddnsTaskService.resumeTask(taskId);
+            log.info("DDNS任务恢复成功，taskId = {}", taskId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("恢复DDNS任务失败，taskId = {}：{}", taskId, e.getMessage());
+            return ResponseEntity.status(404).body("Task not found or resume failed");
+        }
+    }
+
+    @Operation(
+            summary = "分页查询DDNS任务",
+            description = "根据页码和每页大小分页查询DDNS任务"
+    )
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "分页查询成功",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    examples = @ExampleObject(name = "成功示例", externalValue = "classpath:/doc/response/ddns/list.json")
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "服务器内部错误"
+                    )
+            }
+    )
     @GetMapping("/list")
     public ResponseEntity<?> listDDNSTasks(
             @RequestParam(value = "page", defaultValue = "1") int page,
@@ -219,6 +328,35 @@ public class DDNSTaskController {
         }
     }
 
+    @Operation(
+            summary = "获取DDNS任务状态",
+            description = "根据任务ID列表获取DDNS任务状态"
+    )
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "任务状态查询成功"
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "请求错误"
+                    )
+            }
+    )
+    @GetMapping("/status")
+    public ResponseEntity<List<DDNSTaskStatus>> getDDNSTaskStatus(@RequestBody ArrayList<Long> taskIds) {
+        List<DDNSTaskStatus> statusList = new ArrayList<>();
+        for (Long taskId : taskIds) {
+            try {
+                DDNSTaskStatus status= ddnsTaskService.getTaskStatus(taskId);
+                statusList.add(status);
+            } catch (Exception e) {
+                log.error("获取DDNS任务状态失败：{}", e.getMessage());
+            }
+        }
 
+        return ResponseEntity.ok(statusList);
+    }
 
 }
