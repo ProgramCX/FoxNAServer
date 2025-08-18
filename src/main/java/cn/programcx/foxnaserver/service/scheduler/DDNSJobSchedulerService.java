@@ -4,7 +4,6 @@ import cn.programcx.foxnaserver.entity.AccessTask;
 import cn.programcx.foxnaserver.jobs.DDNSJob;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.*;
-import org.quartz.impl.jdbcjobstore.TriggerStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

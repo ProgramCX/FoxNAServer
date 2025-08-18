@@ -64,13 +64,16 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/ws/overview/**").permitAll()
-                        .requestMatchers("/api/status/**").permitAll() // 允许所有用户访问
+                        .requestMatchers("/api/status/**").permitAll()
                         .requestMatchers("/doc.html").permitAll()
                         .requestMatchers("/webjars/**").permitAll()
                         .requestMatchers("/v3/api-docs/**").permitAll()
                         .requestMatchers("/favicon.ico").permitAll()
                         .requestMatchers("/swagger-ui/**").permitAll()
                         .requestMatchers("/api-docs/**").permitAll()
+                        .requestMatchers("/api/file/media/validate").hasAuthority("FILE")
+                        .requestMatchers("/api/file/media/metadata").hasAuthority("FILE")
+                        .requestMatchers("/api/file/media/**").permitAll()
                         .requestMatchers("/api/file/**").hasAuthority("FILE")
                         .requestMatchers("/api/stream/**").hasAuthority("STREAM")
                         .requestMatchers("/api/ddns/**").hasAuthority("DDNS")
