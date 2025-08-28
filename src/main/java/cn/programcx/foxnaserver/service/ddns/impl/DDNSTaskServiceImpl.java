@@ -40,6 +40,7 @@ public class DDNSTaskServiceImpl extends ServiceImpl<AccessTaskMapper, AccessTas
     public void restartTask(Long id) throws Exception {
         //重启逻辑
         stopTask(id);
+        Thread.sleep(50);
         startTask(id);
     }
 

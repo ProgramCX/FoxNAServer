@@ -139,6 +139,7 @@ public class DDNSTaskController {
             }
         } catch (Exception e) {
             log.error("更新DDNS任务失败，taskId = {}：{}", accessTask.getId(), e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(500).body("Internal server error");
         }
     }
@@ -320,6 +321,7 @@ public class DDNSTaskController {
             }
 
             IPage<AccessTask> result = ddnsTaskService.page(pageRequest, queryWrapper);
+            log.info("分页查询DDNS任务成功，page = {}, size = {}, keyword = {},total={}", page, size, keyword,result.getTotal());
 
             return ResponseEntity.ok(result);
         } catch (Exception e) {

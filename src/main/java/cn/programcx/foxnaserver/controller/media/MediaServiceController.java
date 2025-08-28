@@ -126,6 +126,42 @@ public class MediaServiceController {
 
     }
 
+    @Operation(
+            summary = "获取媒体文件类型",
+            description = "根据文件路径获取媒体文件的类型（视频、音频或其他）"
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "成功获取媒体文件类型"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "获取媒体文件类型时发生错误")
+    })
+    @CheckFilePermission(type = "Read", paramFields = {"path"})
+    @GetMapping("/media-type")
+    public ResponseEntity<String> getMediaFileType(@RequestParam("path") String path) {
+        try {
+            String mediaType = decodeMediaService.detectMediaType(path);
+            return ResponseEntity.ok(mediaType);
+        } catch (Exception e) {
+            log.error("获取媒体文件类型时发生错误: {}", e.getMessage());
+            return ResponseEntity.status(500).body("获取媒体文件类型时发生错误: " + e.getMessage());
+        }
+    }
+
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "成功延长媒体访问Token"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "无效的访问Token，无法延长指定文件的媒体访问权限"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "延长媒体访问Token时发生错误")
+    })
+    @Operation(
+            summary = "延长媒体访问Token",
+            description = "延长指定媒体文件的访问Token有效期"
+    )
+    @PostMapping("/prolong-token")
+    @CheckFilePermission(type = "Read", paramFields = {"path"})
+    public void prolongMediaToken(@RequestParam("path") String path,
+                                                     @RequestParam(value = "token", required = true) String token) {
+        mediaTokenService.prolongToken(token, path);
+    }
+
     public static String getFileExtension(String fileName) {
         if (fileName == null) return "";
         int dotIndex = fileName.lastIndexOf('.');

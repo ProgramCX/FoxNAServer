@@ -31,6 +31,7 @@ public class DDNSJobSchedulerService {
                         .repeatForever())
                 .build();
 
+
         scheduler.scheduleJob(jobDetail, trigger);
 
         if (!scheduler.isStarted()) {
@@ -49,6 +50,7 @@ public class DDNSJobSchedulerService {
 
     public void startJob(AccessTask accessTask) throws SchedulerException {
         JobKey jobKey = JobKey.jobKey("ddnsJob_" + accessTask.getId());
+
         if (!scheduler.checkExists(jobKey)) {
             scheduleJob(accessTask);
         } else {
@@ -67,10 +69,34 @@ public class DDNSJobSchedulerService {
 
     public void stopJob(Long id) throws SchedulerException {
         JobKey jobKey = JobKey.jobKey("ddnsJob_" + id);
-        scheduler.deleteJob(jobKey);
+        TriggerKey triggerKey = TriggerKey.triggerKey("ddnsTrigger_" + id);
 
-        log.info("删除任务: {}", jobKey.getName());
+        if (!scheduler.checkExists(jobKey)) {
+            log.warn("任务不存在: {}", jobKey.getName());
+            return;
+        }
+        
+        if (scheduler.checkExists(triggerKey)) {
+            scheduler.pauseTrigger(triggerKey);
+            log.info("触发器已暂停: {}", triggerKey.getName());
+        }
+
+        try {
+            scheduler.interrupt(jobKey);
+            log.info("Job 中断尝试完成: {}", jobKey.getName());
+        } catch (Exception e) {
+            log.warn("中断 Job 失败: {}", jobKey.getName(), e);
+        }
+
+        // 3. 删除 Job
+        boolean deleted = scheduler.deleteJob(jobKey);
+        if (deleted) {
+            log.info("Job 删除成功: {}", jobKey.getName());
+        } else {
+            log.warn("Job 删除失败: {}", jobKey.getName());
+        }
     }
+
 
 
     public void rescheduleJob(AccessTask accessTask) throws SchedulerException {

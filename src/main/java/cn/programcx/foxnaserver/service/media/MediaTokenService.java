@@ -49,5 +49,6 @@ public class MediaTokenService implements SubTokenService {
     @Override
     public void prolongToken(String token, String path) {
        redisTemplate.opsForValue().set(token, path,EXPIRE_SECONDS, TimeUnit.SECONDS);
+       log.info("延长Token [{}] 的有效期至 {} 秒", token, EXPIRE_SECONDS);
     }
 }

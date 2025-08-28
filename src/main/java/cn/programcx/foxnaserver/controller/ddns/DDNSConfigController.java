@@ -130,6 +130,37 @@ public class DDNSConfigController {
         }
     }
 
+    @PutMapping("/updateAccessKey")
+    @Operation(summary = "更新DDNS访问密钥", description = "更新现有的DDNS访问密钥")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "更新DDNS访问密钥成功",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            schema = @Schema(type = "string", example = "AccessKey 更新成功")
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "更新DDNS访问密钥失败",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            schema = @Schema(type = "string", example = "AccessKey 更新失败")
+                    )
+            )
+    })
+    public ResponseEntity<String> updateAccessKey(@RequestBody AccessSecret accessSecret) {
+        boolean updated = ddnsAccessSecretService.updateById(accessSecret);
+        if (updated) {
+            log.info("[{}]更新DDNS访问密钥成功: id为{}", JwtUtil.getCurrentUsername(), accessSecret.getId());
+            return ResponseEntity.ok("AccessKey 更新成功");
+        } else {
+            log.info("[{}]更新DDNS访问密钥失败: id为{}", JwtUtil.getCurrentUsername(), accessSecret.getId());
+            return ResponseEntity.status(500).body("AccessKey 更新失败");
+        }
+    }
+
 
 
     @AllArgsConstructor

@@ -24,7 +24,7 @@ public class MediaInfoExtractor {
 
             // 文件级信息
             dto.setTitle(grabber.getFormatContext().metadata() != null ? "Unknown" : null); // 可优化读取 title
-            dto.setDurationSeconds(grabber.getLengthInTime() / 1_000_000.0);
+            dto.setDurationSeconds(grabber.getLengthInTime() / 1_000_000);
             dto.setVideoTrackCount(grabber.getVideoStream());
             dto.setAudioTrackCount(grabber.getAudioStream());
 
@@ -50,7 +50,7 @@ public class MediaInfoExtractor {
                         track.setIndex(videoIndex++);
                     }
                     case AVMEDIA_TYPE_SUBTITLE -> {
-                        track.setType("aas");
+                        track.setType("ass");
                         track.setIndex(assIndex++);
                     }
                     default -> {

@@ -12,7 +12,7 @@ import java.util.List;
 public class MediaInfoDTO {
 
     private String title;           // 视频标题
-    private double durationSeconds; // 时长（秒）
+    private long durationSeconds; // 时长（秒）
     private int videoTrackCount;    // 视频轨道数量
     private int audioTrackCount;    // 音频轨道数量
     private List<TrackDTO> tracks;  // 所有轨道信息
