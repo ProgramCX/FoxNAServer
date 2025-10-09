@@ -3,9 +3,14 @@ package cn.programcx.foxnaserver.controller.user;
 import cn.programcx.foxnaserver.entity.Permission;
 import cn.programcx.foxnaserver.entity.Resource;
 import cn.programcx.foxnaserver.entity.User;
+import cn.programcx.foxnaserver.mapper.PermissionMapper;
 import cn.programcx.foxnaserver.service.log.ErrorLogService;
 import cn.programcx.foxnaserver.service.user.UserManagementService;
+import cn.programcx.foxnaserver.service.user.UserService;
 import cn.programcx.foxnaserver.util.JwtUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -18,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
+
 import java.util.List;
 import java.util.Map;
 
@@ -32,8 +38,14 @@ public class UserManagementController {
     @Autowired
     private ErrorLogService errorLogService;
 
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private PermissionMapper permissionMapper;
+
     @Data
-   private static class UserPermissionResourceDTO {
+    private static class UserPermissionResourceDTO {
         String userName;
         String password;
         List<Permission> permissions;
@@ -50,16 +62,16 @@ public class UserManagementController {
     })
     @PostMapping("/addUser")
     public ResponseEntity<?> addUser(@RequestBody UserPermissionResourceDTO dto, HttpServletRequest request) {
-        try{
+        try {
             User user = new User();
             System.out.println(dto.password);
             user.setUserName(dto.userName);
             user.setPassword(dto.password);
             user.setState("enabled");
-            userManagementService.addUser(user,dto.permissions,dto.resources);
+            userManagementService.addUser(user, dto.permissions, dto.resources);
         } catch (Exception e) {
             errorLogService.insertErrorLog(request, e, "添加用户失败: " + dto.userName);
-            log.error("[{}]添加用户失败: {}", JwtUtil.getCurrentUsername(),dto.userName, e);
+            log.error("[{}]添加用户失败: {}", JwtUtil.getCurrentUsername(), dto.userName, e);
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
         log.info("[{}]添加用户成功: {}", JwtUtil.getCurrentUsername(), dto.userName);
@@ -72,18 +84,17 @@ public class UserManagementController {
             @ApiResponse(responseCode = "200", description = "用户删除成功"),
             @ApiResponse(responseCode = "400", description = "请求参数错误或用户不存在")
     })
-    @PostMapping("delUser")
-    public ResponseEntity<?> delUser(@RequestParam("userName") String userName,HttpServletRequest request) {
-       try {
-           userManagementService.delUser(userName);
+    @PutMapping("delUser")
+    public ResponseEntity<?> delUser(@RequestParam("userName") String userName, HttpServletRequest request) {
+        try {
+            userManagementService.delUser(userName);
 
-       }
-       catch (Exception e) {
-           errorLogService.insertErrorLog(request, e, "删除用户失败: " + userName);
-           log.error("[{}]删除用户失败: {}", JwtUtil.getCurrentUsername(), userName, e);
-           return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-       }
-         log.info("[{}]删除用户成功: {}", JwtUtil.getCurrentUsername(), userName);
+        } catch (Exception e) {
+            errorLogService.insertErrorLog(request, e, "删除用户失败: " + userName);
+            log.error("[{}]删除用户失败: {}", JwtUtil.getCurrentUsername(), userName, e);
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+        log.info("[{}]删除用户成功: {}", JwtUtil.getCurrentUsername(), userName);
 
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -94,8 +105,8 @@ public class UserManagementController {
             @ApiResponse(responseCode = "200", description = "用户封禁成功"),
             @ApiResponse(responseCode = "400", description = "请求参数错误或用户不存在")
     })
-    @PostMapping("blockUser")
-    public ResponseEntity<?> blockUser(@RequestParam("userName") String userName,HttpServletRequest request) {
+    @PutMapping("blockUser")
+    public ResponseEntity<?> blockUser(@RequestParam("userName") String userName, HttpServletRequest request) {
         try {
             userManagementService.blockUser(userName);
             return new ResponseEntity<>(HttpStatus.OK);
@@ -106,14 +117,33 @@ public class UserManagementController {
         }
     }
 
+    @Operation(summary = "解封用户",
+            description = "解封指定用户名的用户")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "用户解封成功"),
+            @ApiResponse(responseCode = "400", description = "请求参数错误或用户不存在")
+    }
+    )
+    @PutMapping("unblockUser")
+    public ResponseEntity<?> unblockUser(@RequestParam("userName") String userName, HttpServletRequest request) {
+        try {
+            userManagementService.unblockUser(userName);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            errorLogService.insertErrorLog(request, e, "解封用户失败: " + userName);
+            log.error("[{}]解封用户失败: {}", JwtUtil.getCurrentUsername(), userName, e);
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
     @Operation(summary = "修改用户密码",
             description = "修改指定用户名的用户密码")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "用户密码修改成功"),
             @ApiResponse(responseCode = "400", description = "请求参数错误或用户不存在")
     })
-    @PostMapping("changePassword")
-    public ResponseEntity<?> changePassword(@RequestBody Map<String,String> map,HttpServletRequest request) {
+    @PutMapping("changePassword")
+    public ResponseEntity<?> changePassword(@RequestBody Map<String, String> map, HttpServletRequest request) {
         String password = map.get("password");
         String userName = map.get("userName");
 
@@ -122,8 +152,8 @@ public class UserManagementController {
             errorLogService.insertErrorLog(request, new Exception("密码或用户名不能为空"), "修改用户密码失败: " + userName);
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        try{
-            userManagementService.changePassword(userName,password);
+        try {
+            userManagementService.changePassword(userName, password);
 
         } catch (Exception e) {
             log.error("[{}]修改用户密码失败: {}", JwtUtil.getCurrentUsername(), userName, e);
@@ -134,4 +164,120 @@ public class UserManagementController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+
+    @Operation(summary = "查询用户列表",
+            description = "分页查询用户列表，支持按用户名关键字搜索")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "成功获取用户列表"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    }
+    )
+    @GetMapping("/list")
+    public ResponseEntity<?> listUsers(@RequestParam(value = "keyword", required = false) String keyword,
+                                       @RequestParam(value = "size", defaultValue = "30") int size,
+                                       @RequestParam(value = "page", defaultValue = "1") int page) {
+        try {
+            LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.select(User::getUserName, User::getState);
+            Page<User> userPage = new Page<>(page, size);
+            if (keyword != null && !keyword.isEmpty()) {
+                queryWrapper.like(User::getUserName, keyword);
+            }
+            IPage<User> resultPage = userService.page(userPage, queryWrapper);
+            return ResponseEntity.ok(resultPage);
+        }
+        catch (Exception e) {
+            log.error("查询用户列表失败", e);
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Operation(summary = "查询用户权限",
+            description = "查询指定用户名的用户权限列表")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "成功获取用户权限列表"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    }
+    )
+
+    @GetMapping("/permissions")
+    public ResponseEntity<?> userPermission(@RequestParam(value = "userName") String userName) {
+        try{
+            LambdaQueryWrapper<Permission> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(Permission::getOwnerName, userName);
+            List<Permission> permissions = permissionMapper.selectList(queryWrapper);
+            return ResponseEntity.ok(permissions);
+        }catch (Exception e) {
+            log.error("查询用户权限失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "授予用户权限",
+            description = "授予指定用户名的用户某个权限")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "成功授予用户权限"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    @PutMapping("/grantPermission")
+    public ResponseEntity<?> grantPermission(@RequestParam("userName") String userName,
+                                             @RequestParam("areaName") String areaName) {
+        try {
+            userManagementService.grantPermission(userName, areaName);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("授予用户权限失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "撤销用户权限",
+            description = "撤销指定用户名的用户某个权限")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "成功撤销用户权限"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    })
+    @PutMapping("/revokePermission")
+    public ResponseEntity<?> revokePermission(@RequestParam("userName") String userName,
+                                              @RequestParam("areaName") String areaName) {
+        try {
+            userManagementService.revokePermission(userName, areaName);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("撤销用户权限失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "获取所有权限",
+            description = "获取系统中所有可用的权限列表")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "成功获取权限列表"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    }
+    )
+
+    @GetMapping("/allPermissions")
+    public ResponseEntity<?> allPermissions() {
+      return ResponseEntity.ok(userManagementService.allPermissions());
+    }
+
+    @Operation(summary = "更新用户信息",
+            description = "更新用户的基本信息，用户名称和状态")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "成功更新用户信息"),
+            @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    }
+    )
+    @PutMapping("/updateUser")
+    public ResponseEntity<?> updateUser(@RequestBody User user, HttpServletRequest request) {
+        try {
+            userManagementService.updateUser(user);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("更新用户信息失败", e);
+            errorLogService.insertErrorLog(request, e, "更新用户信息失败: " + user.getUserName());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
 }
