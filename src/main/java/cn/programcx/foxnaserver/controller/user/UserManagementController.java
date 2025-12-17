@@ -1,5 +1,6 @@
 package cn.programcx.foxnaserver.controller.user;
 
+import cn.programcx.foxnaserver.common.Result;
 import cn.programcx.foxnaserver.entity.Permission;
 import cn.programcx.foxnaserver.entity.Resource;
 import cn.programcx.foxnaserver.entity.User;
@@ -75,7 +76,7 @@ public class UserManagementController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
         log.info("[{}]添加用户成功: {}", JwtUtil.getCurrentUsername(), dto.userName);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @Operation(summary = "删除用户",
@@ -84,7 +85,7 @@ public class UserManagementController {
             @ApiResponse(responseCode = "200", description = "用户删除成功"),
             @ApiResponse(responseCode = "400", description = "请求参数错误或用户不存在")
     })
-    @PutMapping("delUser")
+    @DeleteMapping("delUser")
     public ResponseEntity<?> delUser(@RequestParam("userName") String userName, HttpServletRequest request) {
         try {
             userManagementService.delUser(userName);
@@ -270,14 +271,54 @@ public class UserManagementController {
     }
     )
     @PutMapping("/updateUser")
-    public ResponseEntity<?> updateUser(@RequestBody User user, HttpServletRequest request) {
+    public ResponseEntity<?> updateUser(@RequestBody User user,@RequestParam String originalName, HttpServletRequest request) {
         try {
-            userManagementService.updateUser(user);
+            userManagementService.updateUser(user,originalName);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
             log.error("更新用户信息失败", e);
             errorLogService.insertErrorLog(request, e, "更新用户信息失败: " + user.getUserName());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
+    }
+
+    @PutMapping("/grantResource")
+    public ResponseEntity<?> grantResource(@RequestParam String userName, @RequestParam String resourcePath,@RequestParam String type ,HttpServletRequest request) {
+        try {
+            userManagementService.grantResource(userName, resourcePath, type);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("授予用户资源失败", e);
+            errorLogService.insertErrorLog(request, e, "授予用户资源失败: " + userName);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/revokeResource")
+    public ResponseEntity<?> revokeResource(@RequestParam String userName, @RequestParam String resourcePath,@RequestParam String type ,HttpServletRequest request) {
+        try {
+            userManagementService.revokeResource(userName, resourcePath, type);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("撤销用户资源失败", e);
+            errorLogService.insertErrorLog(request, e, "撤销用户资源失败: " + userName);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/allResources")
+    public ResponseEntity<?> allResources(@RequestParam String userName) {
+        try {
+            return ResponseEntity.ok(userManagementService.allResources(userName));
+        }catch (Exception e) {
+            log.error("查询用户资源失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+
+    }
+
+    @GetMapping("/dirs")
+    public ResponseEntity<Result<List<UserManagementService.DirectoryDTO>>> listDirectories(@RequestParam(value = "path") String path) {
+        return ResponseEntity.ok(Result.ok(userManagementService.listDirectories(path)));
     }
 }

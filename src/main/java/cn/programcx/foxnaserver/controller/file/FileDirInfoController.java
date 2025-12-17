@@ -120,6 +120,36 @@ public class FileDirInfoController {
         return ResponseEntity.ok(pageResponse);
     }
 
+
+    @GetMapping("/dir-list")
+    public ResponseEntity<?> listDirectories(@RequestParam(value = "path") String path) {
+        try {
+            List<Map<String,String>> directories = new ArrayList<>();
+
+            File dir = new File(path);
+            if (!dir.exists() || !dir.isDirectory()) {
+                return ResponseEntity.badRequest().body("指定路径不存在或不是目录");
+            }
+
+            File[] files = dir.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isDirectory()) {
+                        Map<String,String> map = new HashMap<>();
+                        map.put("name",file.getName());
+                        map.put("path",file.getPath().replace(File.separatorChar,'/'));
+                        directories.add(map);
+                    }
+                }
+            }
+            return ResponseEntity.ok(directories);
+        } catch (Exception e) {
+            log.error("获取可用目录列表失败：{}", e.getMessage());
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
+
     private int compareFileType(String type1, String type2) {
         if (type1 == null && type2 == null) return 0;
         if (type1 == null) return 1;  // 空的排后面
@@ -136,12 +166,18 @@ public class FileDirInfoController {
      */
     private Object getFieldValue(FileInfo fileInfo, String fieldName) {
         switch (fieldName) {
-            case "name": return fileInfo.getName();
-            case "path": return fileInfo.getPath();
-            case "size": return fileInfo.getSize();
-            case "lastModified": return fileInfo.getLastModified();
-            case "type": return fileInfo.getType();
-            default: return null;
+            case "name":
+                return fileInfo.getName();
+            case "path":
+                return fileInfo.getPath();
+            case "size":
+                return fileInfo.getSize();
+            case "lastModified":
+                return fileInfo.getLastModified();
+            case "type":
+                return fileInfo.getType();
+            default:
+                return null;
         }
     }
 
