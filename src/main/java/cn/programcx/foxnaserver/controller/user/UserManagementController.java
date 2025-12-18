@@ -1,6 +1,7 @@
 package cn.programcx.foxnaserver.controller.user;
 
 import cn.programcx.foxnaserver.common.Result;
+import cn.programcx.foxnaserver.dto.user.ResourceDTO;
 import cn.programcx.foxnaserver.entity.Permission;
 import cn.programcx.foxnaserver.entity.Resource;
 import cn.programcx.foxnaserver.entity.User;
@@ -306,13 +307,50 @@ public class UserManagementController {
         }
     }
 
-    @GetMapping("/allResources")
-    public ResponseEntity<?> allResources(@RequestParam String userName) {
+    @PutMapping("/modifyResource")
+    public ResponseEntity<Result<?>> modifyResource(@RequestParam String userName, @RequestParam String oldResourcePath,
+                                                    @RequestParam String newResourcePath,@RequestBody List<String> newTypeList ,HttpServletRequest request) {
         try {
-            return ResponseEntity.ok(userManagementService.allResources(userName));
+            userManagementService.modifyResource(userName, oldResourcePath, newResourcePath, newTypeList);
+            return ResponseEntity.ok(Result.success());
+        } catch (Exception e) {
+            log.error("修改用户资源失败", e);
+            errorLogService.insertErrorLog(request, e, "修改用户资源失败: " + userName);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Result.internalServerError(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/allResources")
+    public ResponseEntity<Result<?>> allResources(@RequestParam String userName) {
+        try {
+            return ResponseEntity.ok(Result.ok( userManagementService.allResources(userName)));
         }catch (Exception e) {
             log.error("查询用户资源失败", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Result.internalServerError(e.getMessage()));
+        }
+
+    }
+
+    @PostMapping("/createResource")
+    public ResponseEntity<Result<?>> createResource(@RequestParam String userName, @RequestParam String resourcePath,@RequestBody List<String> typeList ,HttpServletRequest request) {
+        try {
+            userManagementService.createResource(userName, resourcePath, typeList);
+            return ResponseEntity.ok(Result.success());
+        }catch (Exception e) {
+            log.error("创建资源失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Result.internalServerError(e.getMessage()));
+        }
+
+    }
+
+    @DeleteMapping("/deleteResource")
+    public ResponseEntity<Result<?>> deleteResource(@RequestParam String userName, @RequestParam String resourcePath ,HttpServletRequest request) {
+        try {
+            userManagementService.deleteResource(userName, resourcePath);
+            return ResponseEntity.ok(Result.success());
+        }catch (Exception e) {
+            log.error("删除资源失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Result.internalServerError(e.getMessage()));
         }
 
     }

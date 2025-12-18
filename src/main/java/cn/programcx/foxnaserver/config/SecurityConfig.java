@@ -81,6 +81,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/user/**").hasAuthority("USER")
                         .requestMatchers("/api/ssh/**").hasAuthority("SSH")
                         .requestMatchers("/api/state/**").authenticated()
+                        .requestMatchers("/api/hardware/**").authenticated()
+                        .requestMatchers("/api/user-self/**").authenticated()
                         .anyRequest().authenticated()
                 );
         return http.build();

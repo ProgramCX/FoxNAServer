@@ -192,6 +192,53 @@ public class UserManagementService {
         resourceMapper.delete(queryWrapper);
     }
 
+    public void modifyResource(String userName, String oldResourcePath, String newResourcePath, List<String> typeList) throws Exception {
+        // 删除旧的资源权限
+        LambdaQueryWrapper<Resource> deleteWrapper = new LambdaQueryWrapper<>();
+        deleteWrapper.eq(Resource::getOwnerName, userName)
+                .eq(Resource::getFolderName, oldResourcePath);
+        resourceMapper.delete(deleteWrapper);
+
+        // 添加新的资源权限
+        for (String type : typeList) {
+            Resource resource = new Resource();
+            resource.setOwnerName(userName);
+            resource.setFolderName(newResourcePath);
+            if (type.equalsIgnoreCase("Read")) {
+                type = "Read";
+            } else if (type.equalsIgnoreCase("Write")) {
+                type = "Write";
+            } else {
+                throw new Exception("权限类型错误！");
+            }
+            resource.setPermissionType(type);
+            resourceMapper.insert(resource);
+        }
+    }
+
+    public void createResource(String userName, String resourcePath, List<String> typeList) throws Exception {
+        for (String type : typeList) {
+            Resource resource = new Resource();
+            resource.setOwnerName(userName);
+            resource.setFolderName(resourcePath);
+            if (type.equalsIgnoreCase("Read")) {
+                type = "Read";
+            } else if (type.equalsIgnoreCase("Write")) {
+                type = "Write";
+            } else {
+                throw new Exception("权限类型错误！");
+            }
+            resource.setPermissionType(type);
+            resourceMapper.insert(resource);
+        }
+    }
+
+    public void deleteResource(String userName, String resourcePath) throws Exception {
+        LambdaQueryWrapper<Resource> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Resource::getOwnerName, userName)
+                .eq(Resource::getFolderName, resourcePath);
+        resourceMapper.delete(queryWrapper);
+    }
 
     public List<ResourceDTO> allResources(String userName) throws Exception {
         LambdaQueryWrapper<Resource> queryWrapper = new LambdaQueryWrapper<>();

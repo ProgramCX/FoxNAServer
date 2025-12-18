@@ -31,6 +31,14 @@ public class Result<D> implements Serializable  {
         this.data = data;
     }
 
+    public static <D> Result<D> success() {
+        Result<D> result = new Result<>();
+        result.success = true;
+        result.code = 200;
+        result.message = "success";
+        return result;
+    }
+
     public static <D> Result<D> ok(D data) {
         Result<D> result = new Result<>();
         result.success = true;
