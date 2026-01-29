@@ -15,4 +15,5 @@ public class User {
 
     private String state;
     private String password;
+    private String email;
 }

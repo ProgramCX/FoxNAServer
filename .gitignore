@@ -1,4 +1,8 @@
 HELP.md
+config.properties
+mail-diagnostic.bat
+logs/
+*.log
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/

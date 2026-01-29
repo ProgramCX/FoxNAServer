@@ -1,6 +1,7 @@
 package cn.programcx.foxnaserver.controller.auth;
 
 import cn.programcx.foxnaserver.service.auth.AuthenticationService;
+import cn.programcx.foxnaserver.service.auth.VerificationService;
 import cn.programcx.foxnaserver.service.log.ErrorLogService;
 import cn.programcx.foxnaserver.util.JwtUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -44,6 +45,8 @@ public class AuthenticationController {
 
     @Autowired
     private AuthenticationService authenticationService;
+    @Autowired
+    private VerificationService verificationService;
 
     @Operation(
             summary = "用户登录",
@@ -122,6 +125,62 @@ public class AuthenticationController {
         }
     }
 
+    @PostMapping("/sendVerifyCode")
+    @Operation(
+            summary = "发送验证码",
+            description = "向指定邮箱发送验证码，用于用户注册或密码重置"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "验证码发送成功",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            schema = @Schema(type = "string", example = "Verification code sent successfully")
+                    )),
+            @ApiResponse(responseCode = "500", description = "验证码发送失败",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            schema = @Schema(type = "string", example = "Failed to send verification code")
+                    ))
+    })
+    public ResponseEntity<String> sendVerifyCode(@RequestBody  EmailRequest em, HttpServletRequest request) {
+        try {
+            verificationService.sendVerificationCode(em.getEmailAddr());
+            return ResponseEntity.ok("Verification code sent successfully");
+        } catch (Exception e) {
+            log.error("发送验证码失败: {}", e.getMessage());
+            errorLogService.insertErrorLog(request, e, "发送验证码失败到邮箱: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to send verification code");
+        }
+    }
+
+    @PostMapping("reg")
+    @Operation(
+            summary = "用户注册",
+            description = "使用用户名、密码和验证码进行用户注册"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "用户注册成功",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            schema = @Schema(type = "string", example = "User registered successfully")
+                    )),
+            @ApiResponse(responseCode = "400", description = "用户注册失败",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            schema = @Schema(type = "string", example = "Registration failed: User already exists")
+                    ))
+    })
+    public ResponseEntity<String> registerUser(@RequestBody RegisterRequest reg, HttpServletRequest request) {
+        try {
+            authenticationService.registerUser(reg.getUsername(), reg.getPassword(), reg.getCode());
+            log.info("用户[{}]注册成功！", reg.getUsername());
+            return ResponseEntity.ok("User registered successfully");
+        } catch (Exception e) {
+            log.info("用户[{}]注册失败：{}", reg.getUsername(), e.getMessage());
+            errorLogService.insertErrorLog(request, e, "用户注册失败: " + reg.getUsername() + "，原因：" + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Registration failed: " + e.getMessage());
+        }
+    }
 
 
 }
@@ -132,5 +191,21 @@ class LoginRequest {
     private String username;
     @Schema(description = "密码", example = "123456")
     private String password;
+}
+
+@Data
+class EmailRequest {
+    @Schema(description = "邮箱地址", example = "programcx@qq.com")
+    private String emailAddr;
+}
+
+@Data
+class RegisterRequest {
+    @Schema(description = "用户名", example = "user1")
+    private String username;
+    @Schema(description = "密码", example = "password123")
+    private String password;
+    @Schema(description = "验证码", example = "123456")
+    private String code;
 }
 

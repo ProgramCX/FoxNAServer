@@ -18,6 +18,8 @@ public class AuthenticationService {
 
     @Autowired
     private UserMapper userMapper;
+    @Autowired
+    private VerificationService verificationService;
 
     public boolean registerAdmin() {
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
@@ -33,19 +35,50 @@ public class AuthenticationService {
         user.setPassword("123456");
         user.setState("enabled");
 
-        Permission permission = new Permission();
-        permission.setOwnerName("admin");
         userMapper.insert(user);
 
         List<String> areaList = List.of("FILE","STREAM","DDNS","EMAIL","USER");
 
         areaList.forEach(area -> {
+            Permission permission = new Permission();
+            permission.setOwnerName("admin");
             permission.setAreaName(area);
             permissionMapper.insert(permission);
         });
 
 
         return true;
+    }
+
+    public void registerUser(String userName,String password,String code) throws Exception {
+        try {
+            verificationService.verifyCode(userName, code);
+        }catch (Exception e){
+            throw new Exception("验证码验证失败：" + e.getMessage());
+        }
+
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getUserName, userName);
+        if (userMapper.selectOne(queryWrapper) != null) {
+            throw new Exception("用户已存在！");
+        }
+
+        User user = new User();
+        user.setUserName(userName);
+        user.setPassword(password);
+        user.setEmail(userName);
+        user.setState("enabled");
+
+        userMapper.insert(user);
+
+        List<String> areaList = List.of("FILE","STREAM");
+        areaList.forEach(area -> {
+            Permission permission = new Permission();
+            permission.setOwnerName(userName);
+            permission.setAreaName(area);
+            permissionMapper.insert(permission);
+        });
+
     }
 
     public void checkUserStatus(String username) throws Exception{
