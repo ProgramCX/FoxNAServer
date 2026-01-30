@@ -17,13 +17,17 @@ import cn.programcx.foxnaserver.config.JwtProperties;
 @Component
 public class JwtUtil {
     private final JwtProperties jwtProperties;
+    public final int ACCESS_TOKEN_EXPIRATION = 1000 * 60 * 60; // 1 hour
+    public final int REFRESH_TOKEN_EXPIRATION = 1000 * 60 * 60 * 24 * 7; // 7 days
 
     // 构造注入配置
     public JwtUtil(JwtProperties jwtProperties) {
         this.jwtProperties = jwtProperties;
     }
 
-    public String generateToken(Authentication authentication) {
+
+    // 生成 AccessToken
+    public String generateAccessToken(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         List<String> roles = user.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -34,7 +38,24 @@ public class JwtUtil {
                 .setSubject(user.getUsername())
                 .claim("roles", roles)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))  // 设置过期时间为1小时
+                .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRATION))  // 设置过期时间为1小时
+                .signWith(SignatureAlgorithm.HS256, jwtProperties.getSecret())
+                .compact();
+    }
+
+    //生成 RefreshToken
+    public String generateRefreshToken(Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+
+        List<String> roles = user.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+        // 使用 JWT 库生成 token
+        return Jwts.builder()
+                .setSubject(user.getUsername())
+                .claim("roles",roles)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_EXPIRATION))  // 设置过期时间为7天
                 .signWith(SignatureAlgorithm.HS256, jwtProperties.getSecret())
                 .compact();
     }
