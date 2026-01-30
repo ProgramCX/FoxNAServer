@@ -60,9 +60,25 @@ public class PermissionAspect {
             return joinPoint.proceed();
         }
 
+        // 从请求参数中获取路径（支持普通表单和 multipart/form-data）
         for (String paramField : checkFilePermission.paramFields()) {
-            String value = request.getParameter(paramField);
-            if (value != null) {
+            String value = null;
+            
+            // 首先尝试从普通参数获取
+            value = request.getParameter(paramField);
+            
+            // 如果是 multipart 请求，尝试从 ParameterMap 获取
+            if (value == null && request.getContentType() != null && request.getContentType().contains("multipart")) {
+                Map<String, String[]> paramMap = request.getParameterMap();
+                if (paramMap.containsKey(paramField)) {
+                    String[] values = paramMap.get(paramField);
+                    if (values != null && values.length > 0) {
+                        value = values[0];
+                    }
+                }
+            }
+            
+            if (value != null && !value.isEmpty()) {
                 pathToCheck.add(value);
             }
         }

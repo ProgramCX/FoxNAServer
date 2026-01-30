@@ -1,5 +1,6 @@
 package cn.programcx.foxnaserver.controller.auth;
 
+import cn.programcx.foxnaserver.exception.VerificationCodeColdTimeException;
 import cn.programcx.foxnaserver.service.auth.AuthenticationService;
 import cn.programcx.foxnaserver.service.auth.VerificationService;
 import cn.programcx.foxnaserver.service.log.ErrorLogService;
@@ -142,16 +143,25 @@ public class AuthenticationController {
                             schema = @Schema(type = "string", example = "Failed to send verification code")
                     ))
     })
-    public ResponseEntity<String> sendVerifyCode(@RequestBody  EmailRequest em, HttpServletRequest request) {
-        try {
-            verificationService.sendVerificationCode(em.getEmailAddr());
-            return ResponseEntity.ok("Verification code sent successfully");
-        } catch (Exception e) {
-            log.error("发送验证码失败: {}", e.getMessage());
-            errorLogService.insertErrorLog(request, e, "发送验证码失败到邮箱: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to send verification code");
+        public ResponseEntity<String> sendVerifyCode(@RequestBody EmailRequest em, HttpServletRequest request) {
+                if (em == null || em.getEmailAddr() == null || em.getEmailAddr().isBlank()) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email address is required");
+                }
+
+                try {
+                        verificationService.sendVerificationCode(em.getEmailAddr());
+                        return ResponseEntity.ok("Verification code sent successfully");
+                } catch (VerificationCodeColdTimeException e) {
+                        log.warn("发送验证码被限流: {}", e.getMessage());
+                        errorLogService.insertErrorLog(request, e, "发送验证码被限流: " + e.getMessage());
+                        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(e.getMessage().trim());
+                } catch (Exception e) {
+                        log.error("发送验证码失败: {}", e.getMessage());
+                        errorLogService.insertErrorLog(request, e, "发送验证码失败到邮箱: " + e.getMessage());
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                        .body("Failed to send verification code: " + e.getMessage());
+                }
         }
-    }
 
     @PostMapping("reg")
     @Operation(
