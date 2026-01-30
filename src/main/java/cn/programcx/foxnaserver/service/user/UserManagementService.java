@@ -14,6 +14,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -34,6 +35,8 @@ public class UserManagementService {
     private PermissionMapper permissionMapper;
     @Autowired
     private ResourceMapper resourceMapper;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     private final List<String> permissionList = List.of("SSH", "USER", "EMAIL", "STREAM", "FILE", "DDNS");
     private final List<Map<String, String>> permissionDescriptions = List.of(
@@ -100,7 +103,7 @@ public class UserManagementService {
 
     public void changePassword(String userName, String newPassword) throws Exception {
         LambdaUpdateWrapper<User> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(User::getUserName, userName).set(User::getPassword, newPassword);
+        updateWrapper.eq(User::getUserName, userName).set(User::getPassword, passwordEncoder.encode(newPassword));
         userMapper.update(null, updateWrapper);
     }
 

@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -13,12 +14,15 @@ import org.springframework.stereotype.Service;
 public class UserConfigService {
     @Autowired
     private UserMapper userMapper;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     public void changePassword(String userName, String newPassword, String oldPassword) throws Exception {
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(User::getUserName, userName);
         User user = userMapper.selectOne(queryWrapper);
-        if (user != null && user.getPassword().equals(oldPassword)) {
-            user.setPassword(newPassword);
+        if (user != null && passwordEncoder.matches(oldPassword, user.getPassword())) {
+            user.setPassword(passwordEncoder.encode(newPassword));
             userMapper.updateById(user);
         }else {
             throw new Exception("密码不正确");

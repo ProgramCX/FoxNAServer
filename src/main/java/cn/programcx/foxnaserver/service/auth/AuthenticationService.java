@@ -6,6 +6,7 @@ import cn.programcx.foxnaserver.mapper.PermissionMapper;
 import cn.programcx.foxnaserver.mapper.UserMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,6 +21,8 @@ public class AuthenticationService {
     private UserMapper userMapper;
     @Autowired
     private VerificationService verificationService;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public boolean registerAdmin() {
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
@@ -32,7 +35,7 @@ public class AuthenticationService {
 
         User user = new User();
         user.setUserName("admin");
-        user.setPassword("123456");
+        user.setPassword(passwordEncoder.encode("123456"));
         user.setState("enabled");
 
         userMapper.insert(user);
@@ -65,7 +68,7 @@ public class AuthenticationService {
 
         User user = new User();
         user.setUserName(userName);
-        user.setPassword(password);
+        user.setPassword(passwordEncoder.encode(password));
         user.setEmail(userName);
         user.setState("enabled");
 
