@@ -37,6 +37,7 @@ public class AuthenticationService {
         user.setUserName("admin");
         user.setPassword(passwordEncoder.encode("123456"));
         user.setState("enabled");
+        user.generateId();
 
         userMapper.insert(user);
 
@@ -44,7 +45,7 @@ public class AuthenticationService {
 
         areaList.forEach(area -> {
             Permission permission = new Permission();
-            permission.setOwnerName("admin");
+            permission.setOwnerUuid(user.getId());
             permission.setAreaName(area);
             permissionMapper.insert(permission);
         });
@@ -71,13 +72,14 @@ public class AuthenticationService {
         user.setPassword(passwordEncoder.encode(password));
         user.setEmail(userName);
         user.setState("enabled");
+        user.generateId();
 
         userMapper.insert(user);
 
         List<String> areaList = List.of("FILE","STREAM");
         areaList.forEach(area -> {
             Permission permission = new Permission();
-            permission.setOwnerName(userName);
+            permission.setOwnerUuid(user.getId());
             permission.setAreaName(area);
             permissionMapper.insert(permission);
         });

@@ -18,7 +18,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -145,9 +144,9 @@ public class PermissionAspect {
             String normalizedPath = Paths.get(path).normalize().toString();
             if (normalizedPath.isEmpty()) continue;
             String methodType = checkFilePermission.type();
-            String userName = JwtUtil.getCurrentUsername();
+            String uuid = JwtUtil.getCurrentUuid();
 
-            if (!hasPermission(userName, normalizedPath, methodType)) {
+            if (!hasPermission(uuid, normalizedPath, methodType)) {
                 throw new NoPermissionException("没有权限操作或访问路径: " + normalizedPath);
             }
         }
@@ -158,16 +157,16 @@ public class PermissionAspect {
     /**
      * 检查用户是否有访问指定目录的权限
      *
-     * @param userName  用户名
+     * @param uuid  用户名
      * @param directory 目录路径
      * @param method    权限类型（如 "Read", "Write", "Delete"）
      * @return 是否有权限
      * @throws IOException 如果路径处理出错
      */
 
-    private boolean hasPermission(String userName, String directory, String method) throws IOException {
+    private boolean hasPermission(String uuid, String directory, String method) throws IOException {
         LambdaQueryWrapper<Resource> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Resource::getOwnerName, userName).eq(Resource::getPermissionType, method);
+        queryWrapper.eq(Resource::getOwnerUuid, uuid).eq(Resource::getPermissionType, method);
         List<Resource> resources = resourceMapper.selectList(queryWrapper);
 
         Path normalizedPath = Paths.get(directory).normalize();

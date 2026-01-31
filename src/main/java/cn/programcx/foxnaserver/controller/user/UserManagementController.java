@@ -1,7 +1,6 @@
 package cn.programcx.foxnaserver.controller.user;
 
 import cn.programcx.foxnaserver.common.Result;
-import cn.programcx.foxnaserver.dto.user.ResourceDTO;
 import cn.programcx.foxnaserver.entity.Permission;
 import cn.programcx.foxnaserver.entity.Resource;
 import cn.programcx.foxnaserver.entity.User;
@@ -66,80 +65,79 @@ public class UserManagementController {
     public ResponseEntity<?> addUser(@RequestBody UserPermissionResourceDTO dto, HttpServletRequest request) {
         try {
             User user = new User();
-            System.out.println(dto.password);
             user.setUserName(dto.userName);
             user.setPassword(dto.password);
             user.setState("enabled");
             userManagementService.addUser(user, dto.permissions, dto.resources);
         } catch (Exception e) {
             errorLogService.insertErrorLog(request, e, "添加用户失败: " + dto.userName);
-            log.error("[{}]添加用户失败: {}", JwtUtil.getCurrentUsername(), dto.userName, e);
+            log.error("[{}]添加用户失败: {}", JwtUtil.getCurrentUuid(), dto.userName, e);
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
-        log.info("[{}]添加用户成功: {}", JwtUtil.getCurrentUsername(), dto.userName);
+        log.info("[{}]添加用户成功: {}", JwtUtil.getCurrentUuid(), dto.userName);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @Operation(summary = "删除用户",
-            description = "删除指定用户名的用户")
+            description = "删除指定 UUID 的用户")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "用户删除成功"),
             @ApiResponse(responseCode = "400", description = "请求参数错误或用户不存在")
     })
     @DeleteMapping("delUser")
-    public ResponseEntity<?> delUser(@RequestParam("userName") String userName, HttpServletRequest request) {
+    public ResponseEntity<?> delUser(@RequestParam("uuid") String uuid, HttpServletRequest request) {
         try {
-            userManagementService.delUser(userName);
+            userManagementService.delUserByUuid(uuid);
 
         } catch (Exception e) {
-            errorLogService.insertErrorLog(request, e, "删除用户失败: " + userName);
-            log.error("[{}]删除用户失败: {}", JwtUtil.getCurrentUsername(), userName, e);
+            errorLogService.insertErrorLog(request, e, "删除用户失败: " + uuid);
+            log.error("[{}]删除用户失败: {}", JwtUtil.getCurrentUuid(), uuid, e);
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
-        log.info("[{}]删除用户成功: {}", JwtUtil.getCurrentUsername(), userName);
+        log.info("[{}]删除用户成功: {}", JwtUtil.getCurrentUuid(), uuid);
 
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @Operation(summary = "封禁用户",
-            description = "封禁指定用户名的用户")
+            description = "封禁指定 UUID 的用户")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "用户封禁成功"),
             @ApiResponse(responseCode = "400", description = "请求参数错误或用户不存在")
     })
     @PutMapping("blockUser")
-    public ResponseEntity<?> blockUser(@RequestParam("userName") String userName, HttpServletRequest request) {
+    public ResponseEntity<?> blockUser(@RequestParam("uuid") String uuid, HttpServletRequest request) {
         try {
-            userManagementService.blockUser(userName);
+            userManagementService.blockUserByUuid(uuid);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
-            errorLogService.insertErrorLog(request, e, "封禁用户失败: " + userName);
-            log.error("[{}]封禁用户失败: {}", JwtUtil.getCurrentUsername(), userName, e);
+            errorLogService.insertErrorLog(request, e, "封禁用户失败: " + uuid);
+            log.error("[{}]封禁用户失败: {}", JwtUtil.getCurrentUuid(), uuid, e);
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
 
     @Operation(summary = "解封用户",
-            description = "解封指定用户名的用户")
+            description = "解封指定 UUID 的用户")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "用户解封成功"),
             @ApiResponse(responseCode = "400", description = "请求参数错误或用户不存在")
     }
     )
     @PutMapping("unblockUser")
-    public ResponseEntity<?> unblockUser(@RequestParam("userName") String userName, HttpServletRequest request) {
+    public ResponseEntity<?> unblockUser(@RequestParam("uuid") String uuid, HttpServletRequest request) {
         try {
-            userManagementService.unblockUser(userName);
+            userManagementService.unblockUserByUuid(uuid);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
-            errorLogService.insertErrorLog(request, e, "解封用户失败: " + userName);
-            log.error("[{}]解封用户失败: {}", JwtUtil.getCurrentUsername(), userName, e);
+            errorLogService.insertErrorLog(request, e, "解封用户失败: " + uuid);
+            log.error("[{}]解封用户失败: {}", JwtUtil.getCurrentUuid(), uuid, e);
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
 
     @Operation(summary = "修改用户密码",
-            description = "修改指定用户名的用户密码")
+            description = "修改指定 UUID 的用户密码")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "用户密码修改成功"),
             @ApiResponse(responseCode = "400", description = "请求参数错误或用户不存在")
@@ -147,22 +145,22 @@ public class UserManagementController {
     @PutMapping("changePassword")
     public ResponseEntity<?> changePassword(@RequestBody Map<String, String> map, HttpServletRequest request) {
         String password = map.get("password");
-        String userName = map.get("userName");
+        String uuid = map.get("uuid");
 
-        if (password == null || userName == null) {
-            log.error("[{}]修改用户密码失败: 用户名或密码不能为空", JwtUtil.getCurrentUsername());
-            errorLogService.insertErrorLog(request, new Exception("密码或用户名不能为空"), "修改用户密码失败: " + userName);
+        if (password == null || uuid == null) {
+            log.error("[{}]修改用户密码失败: uuid 或密码不能为空", JwtUtil.getCurrentUuid());
+            errorLogService.insertErrorLog(request, new Exception("密码或 uuid 不能为空"), "修改用户密码失败: " + uuid);
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         try {
-            userManagementService.changePassword(userName, password);
+            userManagementService.changePasswordByUuid(uuid, password);
 
         } catch (Exception e) {
-            log.error("[{}]修改用户密码失败: {}", JwtUtil.getCurrentUsername(), userName, e);
-            errorLogService.insertErrorLog(request, e, "修改用户密码失败: " + userName);
+            log.error("[{}]修改用户密码失败: {}", JwtUtil.getCurrentUuid(), uuid, e);
+            errorLogService.insertErrorLog(request, e, "修改用户密码失败: " + uuid);
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
-        log.info("[{}]修改用户密码成功: {}", JwtUtil.getCurrentUsername(), userName);
+        log.info("[{}]修改用户密码成功: {}", JwtUtil.getCurrentUuid(), uuid);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -180,7 +178,7 @@ public class UserManagementController {
                                        @RequestParam(value = "page", defaultValue = "1") int page) {
         try {
             LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.select(User::getUserName, User::getState);
+            queryWrapper.select(User::getUserName, User::getState, User::getId);
             Page<User> userPage = new Page<>(page, size);
             if (keyword != null && !keyword.isEmpty()) {
                 queryWrapper.like(User::getUserName, keyword);
@@ -195,7 +193,7 @@ public class UserManagementController {
     }
 
     @Operation(summary = "查询用户权限",
-            description = "查询指定用户名的用户权限列表")
+            description = "查询指定 UUID 的用户权限列表")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "成功获取用户权限列表"),
             @ApiResponse(responseCode = "500", description = "服务器内部错误")
@@ -203,10 +201,10 @@ public class UserManagementController {
     )
 
     @GetMapping("/permissions")
-    public ResponseEntity<?> userPermission(@RequestParam(value = "userName") String userName) {
+    public ResponseEntity<?> userPermission(@RequestParam(value = "uuid") String uuid) {
         try{
             LambdaQueryWrapper<Permission> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.eq(Permission::getOwnerName, userName);
+            queryWrapper.eq(Permission::getOwnerUuid, uuid);
             List<Permission> permissions = permissionMapper.selectList(queryWrapper);
             return ResponseEntity.ok(permissions);
         }catch (Exception e) {
@@ -216,16 +214,16 @@ public class UserManagementController {
     }
 
     @Operation(summary = "授予用户权限",
-            description = "授予指定用户名的用户某个权限")
+            description = "授予指定 UUID 的用户某个权限")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "成功授予用户权限"),
             @ApiResponse(responseCode = "500", description = "服务器内部错误")
     })
     @PutMapping("/grantPermission")
-    public ResponseEntity<?> grantPermission(@RequestParam("userName") String userName,
+    public ResponseEntity<?> grantPermission(@RequestParam("uuid") String uuid,
                                              @RequestParam("areaName") String areaName) {
         try {
-            userManagementService.grantPermission(userName, areaName);
+            userManagementService.grantPermissionByUuid(uuid, areaName);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
             log.error("授予用户权限失败", e);
@@ -234,16 +232,16 @@ public class UserManagementController {
     }
 
     @Operation(summary = "撤销用户权限",
-            description = "撤销指定用户名的用户某个权限")
+            description = "撤销指定 UUID 的用户某个权限")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "成功撤销用户权限"),
             @ApiResponse(responseCode = "500", description = "服务器内部错误")
     })
     @PutMapping("/revokePermission")
-    public ResponseEntity<?> revokePermission(@RequestParam("userName") String userName,
+    public ResponseEntity<?> revokePermission(@RequestParam("uuid") String uuid,
                                               @RequestParam("areaName") String areaName) {
         try {
-            userManagementService.revokePermission(userName, areaName);
+            userManagementService.revokePermissionByUuid(uuid, areaName);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
             log.error("撤销用户权限失败", e);
@@ -272,9 +270,9 @@ public class UserManagementController {
     }
     )
     @PutMapping("/updateUser")
-    public ResponseEntity<?> updateUser(@RequestBody User user,@RequestParam String originalName, HttpServletRequest request) {
+    public ResponseEntity<?> updateUser(@RequestBody User user,@RequestParam String uuid, HttpServletRequest request) {
         try {
-            userManagementService.updateUser(user,originalName);
+            userManagementService.updateUser(user, uuid);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
             log.error("更新用户信息失败", e);
@@ -284,46 +282,46 @@ public class UserManagementController {
     }
 
     @PutMapping("/grantResource")
-    public ResponseEntity<?> grantResource(@RequestParam String userName, @RequestParam String resourcePath,@RequestParam String type ,HttpServletRequest request) {
+    public ResponseEntity<?> grantResource(@RequestParam String uuid, @RequestParam String resourcePath,@RequestParam String type ,HttpServletRequest request) {
         try {
-            userManagementService.grantResource(userName, resourcePath, type);
+            userManagementService.grantResourceByUuid(uuid, resourcePath, type);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
             log.error("授予用户资源失败", e);
-            errorLogService.insertErrorLog(request, e, "授予用户资源失败: " + userName);
+            errorLogService.insertErrorLog(request, e, "授予用户资源失败: " + uuid);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
     @PutMapping("/revokeResource")
-    public ResponseEntity<?> revokeResource(@RequestParam String userName, @RequestParam String resourcePath,@RequestParam String type ,HttpServletRequest request) {
+    public ResponseEntity<?> revokeResource(@RequestParam String uuid, @RequestParam String resourcePath,@RequestParam String type ,HttpServletRequest request) {
         try {
-            userManagementService.revokeResource(userName, resourcePath, type);
+            userManagementService.revokeResourceByUuid(uuid, resourcePath, type);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
             log.error("撤销用户资源失败", e);
-            errorLogService.insertErrorLog(request, e, "撤销用户资源失败: " + userName);
+            errorLogService.insertErrorLog(request, e, "撤销用户资源失败: " + uuid);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
     @PutMapping("/modifyResource")
-    public ResponseEntity<Result<?>> modifyResource(@RequestParam String userName, @RequestParam String oldResourcePath,
+    public ResponseEntity<Result<?>> modifyResource(@RequestParam String uuid, @RequestParam String oldResourcePath,
                                                     @RequestParam String newResourcePath,@RequestBody List<String> newTypeList ,HttpServletRequest request) {
         try {
-            userManagementService.modifyResource(userName, oldResourcePath, newResourcePath, newTypeList);
+            userManagementService.modifyResourceByUuid(uuid, oldResourcePath, newResourcePath, newTypeList);
             return ResponseEntity.ok(Result.success());
         } catch (Exception e) {
             log.error("修改用户资源失败", e);
-            errorLogService.insertErrorLog(request, e, "修改用户资源失败: " + userName);
+            errorLogService.insertErrorLog(request, e, "修改用户资源失败: " + uuid);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Result.internalServerError(e.getMessage()));
         }
     }
 
     @GetMapping("/allResources")
-    public ResponseEntity<Result<?>> allResources(@RequestParam String userName) {
+    public ResponseEntity<Result<?>> allResources(@RequestParam String uuid) {
         try {
-            return ResponseEntity.ok(Result.ok( userManagementService.allResources(userName)));
+            return ResponseEntity.ok(Result.ok( userManagementService.allResourcesByUuid(uuid)));
         }catch (Exception e) {
             log.error("查询用户资源失败", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Result.internalServerError(e.getMessage()));
@@ -332,9 +330,9 @@ public class UserManagementController {
     }
 
     @PostMapping("/createResource")
-    public ResponseEntity<Result<?>> createResource(@RequestParam String userName, @RequestParam String resourcePath,@RequestBody List<String> typeList ,HttpServletRequest request) {
+    public ResponseEntity<Result<?>> createResource(@RequestParam String uuid, @RequestParam String resourcePath,@RequestBody List<String> typeList ,HttpServletRequest request) {
         try {
-            userManagementService.createResource(userName, resourcePath, typeList);
+            userManagementService.createResourceByUuid(uuid, resourcePath, typeList);
             return ResponseEntity.ok(Result.success());
         }catch (Exception e) {
             log.error("创建资源失败", e);
@@ -344,9 +342,9 @@ public class UserManagementController {
     }
 
     @DeleteMapping("/deleteResource")
-    public ResponseEntity<Result<?>> deleteResource(@RequestParam String userName, @RequestParam String resourcePath ,HttpServletRequest request) {
+    public ResponseEntity<Result<?>> deleteResource(@RequestParam String uuid, @RequestParam String resourcePath ,HttpServletRequest request) {
         try {
-            userManagementService.deleteResource(userName, resourcePath);
+            userManagementService.deleteResourceByUuid(uuid, resourcePath);
             return ResponseEntity.ok(Result.success());
         }catch (Exception e) {
             log.error("删除资源失败", e);

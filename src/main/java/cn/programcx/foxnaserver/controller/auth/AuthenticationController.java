@@ -1,6 +1,8 @@
 package cn.programcx.foxnaserver.controller.auth;
 
+import cn.programcx.foxnaserver.entity.User;
 import cn.programcx.foxnaserver.exception.VerificationCodeColdTimeException;
+import cn.programcx.foxnaserver.mapper.UserMapper;
 import cn.programcx.foxnaserver.service.auth.AuthenticationService;
 import cn.programcx.foxnaserver.service.auth.VerificationService;
 import cn.programcx.foxnaserver.service.log.ErrorLogService;
@@ -22,13 +24,16 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+
 import jakarta.servlet.http.HttpServletRequest;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -51,6 +56,8 @@ public class AuthenticationController {
     private VerificationService verificationService;
     @Autowired
     private TokenStorageService tokenStorageService;
+    @Autowired
+    private UserMapper userMapper;
 
     @Operation(
             summary = "用户登录",
@@ -79,15 +86,22 @@ public class AuthenticationController {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            //生成accessToken 和 refreshToken
-            String accessToken = jwtUtil.generateAccessToken(authentication);
-            String refreshToken = jwtUtil.generateRefreshToken(authentication);
+            // 获取用户 UUID
+            String username = loginRequest.getUsername();
+            LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(User::getUserName, username);
+            User user = userMapper.selectOne(queryWrapper);
+            String userUuid = user.getId();
 
-            //把双token存入redis
-            tokenStorageService.storeAccessToken(accessToken, loginRequest.getUsername());
-            tokenStorageService.storeRefreshToken(refreshToken, loginRequest.getUsername());
+            // 生成 accessToken 和 refreshToken（使用 uuid 作为 subject）
+            String accessToken = jwtUtil.generateAccessTokenByUuid(userUuid, authentication.getAuthorities());
+            String refreshToken = jwtUtil.generateRefreshTokenByUuid(userUuid, authentication.getAuthorities());
 
-            log.info("[{}]用户登录成功！", loginRequest.getUsername());
+            // 把双 token 存入 redis（使用 uuid 作为 key）
+            tokenStorageService.storeAccessToken(accessToken, userUuid);
+            tokenStorageService.storeRefreshToken(refreshToken, userUuid);
+
+            log.info("[{}]用户登录成功！UUID: {}", username, userUuid);
 
             TokenResponse token = new TokenResponse();
             token.setAccessToken(accessToken);
@@ -218,28 +232,41 @@ public class AuthenticationController {
     })
     public ResponseEntity<?> logout(@RequestHeader("Authorization") String authHeader) {
         String accessToken = authHeader.substring(7);
-        String username = JwtUtil.getCurrentUsername();
+        String userUuid = JwtUtil.getCurrentUuid();
 
-        // 删除双Token
+        // 删除双 Token（使用 uuid）
         tokenStorageService.deleteAccessTokenByToken(accessToken);
-        tokenStorageService.deleteRefreshToken(username);
+        tokenStorageService.deleteRefreshToken(userUuid);
 
         return ResponseEntity.ok("Logged out");
     }
 
-    @PostMapping("/refreshToken")
+    @GetMapping("/initRequired")
+    @Operation(
+            summary = "检查是否需要初始化管理员",
+            description = "返回是否系统中没有管理员账户"
+    )
+    public ResponseEntity<?> initRequired() {
+        long userCount = userMapper.selectCount(null);
+        if (userCount == 0) {
+            return ResponseEntity.ok(Map.of("required", true));
+        }
+        return ResponseEntity.ok(Map.of("required", false));
+    }
+
+    @PostMapping("/refresh")
     @Operation(
             summary = "刷新访问令牌",
             description = "使用刷新令牌刷新访问令牌，返回新的访问令牌和刷新令牌"
     )
     public ResponseEntity<?> refreshToken(@RequestBody Map<String,String> request) {
         String refreshToken = request.get("refreshToken");
-        String userName = request.get("username");
+        String userUuid = request.get("uuid");
         if (refreshToken == null || refreshToken.isBlank()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Refresh token is required");
         }
 
-        String storedRefreshToken = tokenStorageService.getRefreshToken(userName);
+        String storedRefreshToken = tokenStorageService.getRefreshToken(userUuid);
         if (storedRefreshToken == null || storedRefreshToken.isBlank() || !storedRefreshToken.equals(refreshToken)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token");
         }
@@ -250,26 +277,26 @@ public class AuthenticationController {
         }
 
         try {
-            // 检查用户状态
-            authenticationService.checkUserStatus(userName);
+            // 获取角色列表
+            List<String> roles = jwtUtil.getRoles(refreshToken);
+            List<GrantedAuthority> authorities = roles.stream()
+                    .map(role -> new GrantedAuthority() {
+                        @Override
+                        public String getAuthority() {
+                            return role.toUpperCase();
+                        }
+                    })
+                    .collect(Collectors.toList());
 
-            // 生成新的 token 对应的 Authentication 对象
-            UserDetails userDetails = org.springframework.security.core.userdetails.User.withUsername(userName)
-                    .password("")
-                    .authorities(jwtUtil.getRoles(refreshToken).toArray(new String[0]))
-                    .build();
-            Authentication authentication = new UsernamePasswordAuthenticationToken(
-                    userDetails, null, userDetails.getAuthorities());
-
-            // 生成新的 accessToken 和 refreshToken
-            String newAccessToken = jwtUtil.generateAccessToken(authentication);
-            String newRefreshToken = jwtUtil.generateRefreshToken(authentication);
+            // 生成新的 token（使用 uuid）
+            String newAccessToken = jwtUtil.generateAccessTokenByUuid(userUuid, authorities);
+            String newRefreshToken = jwtUtil.generateRefreshTokenByUuid(userUuid, authorities);
 
             // 更新 Redis 中的 token
-            tokenStorageService.storeAccessToken(newAccessToken, userName);
-            tokenStorageService.storeRefreshToken(newRefreshToken, userName);
+            tokenStorageService.storeAccessToken(newAccessToken, userUuid);
+            tokenStorageService.storeRefreshToken(newRefreshToken, userUuid);
 
-            log.info("[{}]令牌刷新成功！", userName);
+            log.info("[{}]令牌刷新成功！", userUuid);
 
             TokenResponse tokenResponse = new TokenResponse();
             tokenResponse.setAccessToken(newAccessToken);
@@ -277,7 +304,7 @@ public class AuthenticationController {
 
             return ResponseEntity.ok(tokenResponse);
         } catch (Exception e) {
-            log.info("[{}]令牌刷新失败：{}", userName, e.getMessage());
+            log.info("[{}]令牌刷新失败：{}", userUuid, e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token refresh failed: " + e.getMessage());
         }
     }
@@ -316,4 +343,3 @@ class TokenResponse {
     @Schema(description = "刷新令牌", example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
     private String refreshToken;
 }
-

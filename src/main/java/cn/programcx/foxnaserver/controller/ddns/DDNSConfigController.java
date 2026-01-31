@@ -90,10 +90,10 @@ public class DDNSConfigController {
     public ResponseEntity<String> addAccessKey(@RequestBody AccessSecret accessSecret) {
         boolean saved = ddnsAccessSecretService.save(accessSecret);
         if (saved) {
-            log.info("[{}]添加DDNS访问密钥成功: id为{}", JwtUtil.getCurrentUsername(), accessSecret.getId());
+            log.info("[{}]添加DDNS访问密钥成功: id为{}", JwtUtil.getCurrentUuid(), accessSecret.getId());
             return ResponseEntity.ok("AccessKey 添加成功");
         } else {
-            log.info("[{}]添加DDNS访问密钥失败: id为{}", JwtUtil.getCurrentUsername(), accessSecret.getId());
+            log.info("[{}]添加DDNS访问密钥失败: id为{}", JwtUtil.getCurrentUuid(), accessSecret.getId());
             return ResponseEntity.status(500).body("AccessKey 添加失败");
         }
     }
@@ -122,10 +122,10 @@ public class DDNSConfigController {
     public ResponseEntity<String> delAccessKey(@RequestParam("id") String id) {
         boolean removed = ddnsAccessSecretService.removeById(id);
         if (removed) {
-            log.info("[{}]删除DDNS访问密钥成功: id为{}", JwtUtil.getCurrentUsername(), id);
+            log.info("[{}]删除DDNS访问密钥成功: id为{}", JwtUtil.getCurrentUuid(), id);
             return ResponseEntity.ok("AccessKey 删除成功");
         } else {
-            log.info("[{}]删除DDNS访问密钥失败: id为{}", JwtUtil.getCurrentUsername(), id);
+            log.info("[{}]删除DDNS访问密钥失败: id为{}", JwtUtil.getCurrentUuid(), id);
             return ResponseEntity.status(500).body("AccessKey 删除失败");
         }
     }
@@ -153,10 +153,10 @@ public class DDNSConfigController {
     public ResponseEntity<String> updateAccessKey(@RequestBody AccessSecret accessSecret) {
         boolean updated = ddnsAccessSecretService.updateById(accessSecret);
         if (updated) {
-            log.info("[{}]更新DDNS访问密钥成功: id为{}", JwtUtil.getCurrentUsername(), accessSecret.getId());
+            log.info("[{}]更新DDNS访问密钥成功: id为{}", JwtUtil.getCurrentUuid(), accessSecret.getId());
             return ResponseEntity.ok("AccessKey 更新成功");
         } else {
-            log.info("[{}]更新DDNS访问密钥失败: id为{}", JwtUtil.getCurrentUsername(), accessSecret.getId());
+            log.info("[{}]更新DDNS访问密钥失败: id为{}", JwtUtil.getCurrentUuid(), accessSecret.getId());
             return ResponseEntity.status(500).body("AccessKey 更新失败");
         }
     }

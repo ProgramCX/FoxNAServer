@@ -57,7 +57,7 @@ public class CommonController {
 
         // 查询用户权限
         LambdaQueryWrapper<Permission> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Permission::getOwnerName, username);
+        queryWrapper.eq(Permission::getOwnerUuid, user.getId());
         List<Permission> permissions = permissionMapper.selectList(queryWrapper);
         ArrayList<String> permissionsString = new ArrayList<>();
 

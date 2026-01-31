@@ -16,6 +16,6 @@ public class Permission {
 
     private String areaName;
 
-    private String ownerName;
+    private String ownerUuid;
 
 }

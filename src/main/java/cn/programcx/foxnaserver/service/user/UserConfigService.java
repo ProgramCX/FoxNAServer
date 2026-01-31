@@ -17,14 +17,17 @@ public class UserConfigService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public void changePassword(String userName, String newPassword, String oldPassword) throws Exception {
+    public void changePassword(String uuid, String newPassword, String oldPassword) throws Exception {
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(User::getUserName, userName);
+        queryWrapper.eq(User::getId, uuid);
         User user = userMapper.selectOne(queryWrapper);
         if (user != null && passwordEncoder.matches(oldPassword, user.getPassword())) {
             user.setPassword(passwordEncoder.encode(newPassword));
             userMapper.updateById(user);
         }else {
+            if (user != null) {
+                log.debug("User {} provided incorrect old password, hash:{},targeHash:{}", uuid,oldPassword,user.getPassword());
+            }
             throw new Exception("密码不正确");
         }
     }

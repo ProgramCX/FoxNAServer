@@ -22,7 +22,7 @@ public class UserConfigController {
 
     @PutMapping("/changePassword")
     public ResponseEntity<Result<?>> changePassword(String oldPassword, String newPassword) {
-        String userName = JwtUtil.getCurrentUsername();
+        String userName = JwtUtil.getCurrentUuid();
         try {
             userConfigService.changePassword(userName, newPassword, oldPassword);
             return ResponseEntity.ok(Result.success());
@@ -34,7 +34,7 @@ public class UserConfigController {
 
     @PutMapping("/changeUserName")
     public ResponseEntity<Result<?>> changeUserName(String newUserName) throws Exception {
-        String currentUserName = JwtUtil.getCurrentUsername();
+        String currentUserName = JwtUtil.getCurrentUuid();
         if (currentUserName != null && currentUserName.equalsIgnoreCase("admin")) {
             return ResponseEntity.status(500).body(Result.internalServerError("Cannot change admin username"));
         }

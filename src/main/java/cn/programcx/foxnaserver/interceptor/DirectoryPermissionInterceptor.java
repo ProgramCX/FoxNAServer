@@ -10,7 +10,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.File;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,9 +23,9 @@ public class DirectoryPermissionInterceptor implements HandlerInterceptor {
     ResourceMapper resourceMapper;
 
 
-    private boolean hasPermission(String userName, String directory, String method) throws IOException {
+    private boolean hasPermission(String userUuid, String directory, String method) throws IOException {
         LambdaQueryWrapper<Resource> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Resource::getOwnerName, userName).eq(Resource::getPermissionType, method);
+        queryWrapper.eq(Resource::getOwnerUuid, userUuid).eq(Resource::getPermissionType, method);
         List<Resource> resources = resourceMapper.selectList(queryWrapper);
 
         String normalizedPath = Paths.get(directory).normalize().toString();
@@ -51,7 +51,7 @@ public class DirectoryPermissionInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        String userName = JwtUtil.getCurrentUsername();
+        String userUuid = JwtUtil.getCurrentUuid();
         String path = request.getParameter("path");
         String methodType = request.getMethod();
 
@@ -63,7 +63,7 @@ public class DirectoryPermissionInterceptor implements HandlerInterceptor {
                 return false;
             }
 
-            if(!hasPermission(userName, oldPath, "Read") || !hasPermission(userName, newPath, "Write")) {
+            if(!hasPermission(userUuid, oldPath, "Read") || !hasPermission(userUuid, newPath, "Write")) {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 return false;
             }
@@ -86,7 +86,7 @@ public class DirectoryPermissionInterceptor implements HandlerInterceptor {
                 return false;
             }
 
-            if (!hasPermission(userName, path, method)) {
+            if (!hasPermission(userUuid, path, method)) {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 return false;
             }
@@ -107,4 +107,3 @@ public class DirectoryPermissionInterceptor implements HandlerInterceptor {
         return false;
     }
 }
-

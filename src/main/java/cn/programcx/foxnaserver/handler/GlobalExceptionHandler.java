@@ -23,7 +23,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NoPermissionException.class)
     public ResponseEntity<Map<String, Object>> handleNoPermissionException(NoPermissionException ex,HttpServletRequest request) {
-        log.error("[{}]用户没有权限访问资源: {}", JwtUtil.getCurrentUsername(), ex.getMessage());
+        log.error("[{}]用户没有权限访问资源: {}", JwtUtil.getCurrentUuid(), ex.getMessage());
         errorLogService.insertErrorLog(request, ex, "用户没有权限访问资源: " + ex.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
                 "code", 403,

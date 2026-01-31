@@ -32,7 +32,7 @@ public class MediaServiceController {
 
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "验证通过，返回临时访问Token"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "无效的访问Token，无法访问指定文件的媒体流"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "无效的访问Token，无法访问指定文件的媒体流"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "服务器内部错误")
     })
     @Operation(
@@ -75,7 +75,7 @@ public class MediaServiceController {
     )
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "成功获取视频流"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "无效的访问Token，无法访问指定文件的媒体流"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "无效的访问Token，无法访问指定文件的媒体流"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "处理视频流时发生错误")
     })
     @GetMapping("/video-stream")
@@ -86,7 +86,7 @@ public class MediaServiceController {
                                             @RequestParam(value = "videoTrackIndex", required = false) Integer videoTrackIndex,
                                             HttpServletResponse response) {
         if (!mediaTokenService.validateToken(token, path)) {
-            return ResponseEntity.status(403).body("无效的访问Token，无法访问指定文件的媒体流。");
+            return ResponseEntity.status(401).body("无效的访问Token，无法访问指定文件的媒体流。");
         }
         if (rangeMediaService == null) {
             log.error("rangeMediaService is null inside getVideoStream method");
@@ -148,7 +148,7 @@ public class MediaServiceController {
 
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "成功延长媒体访问Token"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "无效的访问Token，无法延长指定文件的媒体访问权限"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "无效的访问Token，无法延长指定文件的媒体访问权限"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "延长媒体访问Token时发生错误")
     })
     @Operation(

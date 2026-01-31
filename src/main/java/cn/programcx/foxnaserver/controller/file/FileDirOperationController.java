@@ -108,14 +108,14 @@ public class FileDirOperationController {
             resultMap.put("totalCount", paths.size());
             resultMap.put("failedPaths", failedPaths);
 
-            log.error("[{}]删除文件或目录失败，路径数量: {}, 失败数量:{}, 请求的目录数组：{}, 出现错误的目录：{}，", JwtUtil.getCurrentUsername(), paths.size(), failedPaths.size(), paths, failedPaths);
+            log.error("[{}]删除文件或目录失败，路径数量: {}, 失败数量:{}, 请求的目录数组：{}, 出现错误的目录：{}，", JwtUtil.getCurrentUuid(), paths.size(), failedPaths.size(), paths, failedPaths);
             return new ResponseEntity<>(resultMap, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         resultMap.put("status", "success");
         resultMap.put("totalDeleted", paths.size());
 
-        log.info("[{}]删除文件或目录成功，路径数量: {},目录数组：{}", JwtUtil.getCurrentUsername(), paths.size(), paths);
+        log.info("[{}]删除文件或目录成功，路径数量: {},目录数组：{}", JwtUtil.getCurrentUuid(), paths.size(), paths);
         return new ResponseEntity<>(resultMap, HttpStatus.OK);
     }
 
@@ -175,7 +175,7 @@ public class FileDirOperationController {
         headers.set(HttpHeaders.ACCEPT_RANGES, "bytes");
         headers.set(HttpHeaders.CONTENT_RANGE, "bytes " + start + "-" + end + "/" + fileLength);
 
-        log.info("[{}]下载文件：{}, Range: {}, 起始字节: {}, 结束字节: {}, 文件长度: {}", JwtUtil.getCurrentUsername(), path, Range, start, end, fileLength);
+        log.info("[{}]下载文件：{}, Range: {}, 起始字节: {}, 结束字节: {}, 文件长度: {}", JwtUtil.getCurrentUuid(), path, Range, start, end, fileLength);
 
         return new ResponseEntity<>(resource, headers, Range == null ? HttpStatus.OK : HttpStatus.PARTIAL_CONTENT);
     }
@@ -235,14 +235,14 @@ public class FileDirOperationController {
             resultMap.put("successCount", successCount);
             resultMap.put("failedCount", pathsList.size() - successCount);
             resultMap.put("failedPaths", failedPaths);
-            log.error("[{}]移动文件或目录失败，路径数量: {}, 成功数量: {}, 失败数量: {}, 目录数组：{}", JwtUtil.getCurrentUsername(), pathsList.size(), successCount, failedPaths.size(), pathsList);
+            log.error("[{}]移动文件或目录失败，路径数量: {}, 成功数量: {}, 失败数量: {}, 目录数组：{}", JwtUtil.getCurrentUuid(), pathsList.size(), successCount, failedPaths.size(), pathsList);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(resultMap);
         }
 
         resultMap.put("status", "success");
         resultMap.put("totalMoved", successCount);
 
-        log.info("[{}]移动文件或目录成功，路径数量: {}, 成功数量: {}, 失败数量: {}, 目录数组：{}", JwtUtil.getCurrentUsername(), pathsList.size(), successCount, failedPaths.size(), pathsList);
+        log.info("[{}]移动文件或目录成功，路径数量: {}, 成功数量: {}, 失败数量: {}, 目录数组：{}", JwtUtil.getCurrentUuid(), pathsList.size(), successCount, failedPaths.size(), pathsList);
         return ResponseEntity.ok(resultMap);
     }
 
@@ -298,11 +298,11 @@ public class FileDirOperationController {
             resultMap.put("failedCount", pathsList.size() - successCount);
             resultMap.put("failedPaths", failedPaths);
 
-            log.error("[{}]复制文件或目录失败，路径数量: {}, 成功数量: {}, 失败数量: {}, 目录数组：{}", JwtUtil.getCurrentUsername(), pathsList.size(), successCount, failedPaths.size(), pathsList);
+            log.error("[{}]复制文件或目录失败，路径数量: {}, 成功数量: {}, 失败数量: {}, 目录数组：{}", JwtUtil.getCurrentUuid(), pathsList.size(), successCount, failedPaths.size(), pathsList);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(resultMap);
         }
 
-        log.info("[{}]复制文件或目录成功，路径数量: {}, 成功数量: {}, 失败数量: {}, 目录数组：{}", JwtUtil.getCurrentUsername(), pathsList.size(), successCount, failedPaths.size(), pathsList);
+        log.info("[{}]复制文件或目录成功，路径数量: {}, 成功数量: {}, 失败数量: {}, 目录数组：{}", JwtUtil.getCurrentUuid(), pathsList.size(), successCount, failedPaths.size(), pathsList);
         resultMap.put("status", "success");
         resultMap.put("totalCopied", successCount);
         return ResponseEntity.ok(resultMap);
@@ -339,14 +339,14 @@ public class FileDirOperationController {
         resultMap.put("renameTo", newName);
         if (!success) {
             resultMap.put("status", "failed");
-            log.error("[{}]重命名文件或目录失败，路径: {}, 新名称: {}", JwtUtil.getCurrentUsername(), path, newName);
+            log.error("[{}]重命名文件或目录失败，路径: {}, 新名称: {}", JwtUtil.getCurrentUuid(), path, newName);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(resultMap);
         }
 
         // 更新资源路径
         modifyResourcePathName(path, newName);
 
-        log.info("[{}]重命名文件或目录成功，路径: {}, 新名称: {}", JwtUtil.getCurrentUsername(), path, newName);
+        log.info("[{}]重命名文件或目录成功，路径: {}, 新名称: {}", JwtUtil.getCurrentUuid(), path, newName);
         resultMap.put("status", "success");
         return new ResponseEntity<>(resultMap, HttpStatus.OK);
     }
@@ -365,7 +365,7 @@ public class FileDirOperationController {
 
         if (file.isEmpty()) {
             errorLogService.insertErrorLog(request, new Exception("文件为空！"), "上传文件：文件为空");
-            log.error("[{}]上传文件失败，文件名: {}, 目标路径: {}, 错误信息: 文件为空", JwtUtil.getCurrentUsername(), file.getOriginalFilename(), path);
+            log.error("[{}]上传文件失败，文件名: {}, 目标路径: {}, 错误信息: 文件为空", JwtUtil.getCurrentUuid(), file.getOriginalFilename(), path);
         }
 
         Path targetPath = Paths.get(path);
@@ -386,12 +386,12 @@ public class FileDirOperationController {
             outputStream.close();
         } catch (IOException e) {
             errorLogService.insertErrorLog(request, e, "上传文件" + file.getOriginalFilename() + "到" + path + "失败" + e.getMessage());
-            log.error("[{}]上传文件失败，文件名: {}, 目标路径: {}, 错误信息: {}", JwtUtil.getCurrentUsername(), file.getOriginalFilename(), path, e.getMessage());
+            log.error("[{}]上传文件失败，文件名: {}, 目标路径: {}, 错误信息: {}", JwtUtil.getCurrentUuid(), file.getOriginalFilename(), path, e.getMessage());
 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("status", "failed", "message", "文件上传失败！", "error", e.getMessage()));
         }
 
-        log.info("[{}]上传文件成功，文件名: {}, 目标路径: {}", JwtUtil.getCurrentUsername(), file.getOriginalFilename(), targetPath.toString());
+        log.info("[{}]上传文件成功，文件名: {}, 目标路径: {}", JwtUtil.getCurrentUuid(), file.getOriginalFilename(), targetPath.toString());
         return ResponseEntity.ok(Map.of("status", "success", "message", "文件上传成功！", "fileName", file.getOriginalFilename(), "path", targetPath.toString()));
 
     }
@@ -423,13 +423,13 @@ public class FileDirOperationController {
 
         try {
             Files.createDirectories(dirPath);
-            log.info("[{}]创建目录成功，路径: {}", JwtUtil.getCurrentUsername(), path);
+            log.info("[{}]创建目录成功，路径: {}", JwtUtil.getCurrentUuid(), path);
             resultMap.put("status", "success");
             resultMap.put("message", "目录创建成功！");
             return ResponseEntity.ok(resultMap);
         } catch (IOException e) {
             errorLogService.insertErrorLog(request, e, "创建目录失败：" + e.getMessage());
-            log.error("[{}]创建目录失败，路径: {}, 错误信息: {}", JwtUtil.getCurrentUsername(), path, e.getMessage());
+            log.error("[{}]创建目录失败，路径: {}, 错误信息: {}", JwtUtil.getCurrentUuid(), path, e.getMessage());
             resultMap.put("status", "failed");
             resultMap.put("message", "目录创建失败：" + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(resultMap);
@@ -474,12 +474,12 @@ public class FileDirOperationController {
                         try {
                             Files.delete(p);
                         } catch (IOException e) {
-                            log.error("[{}]删除目录失败，路径: {}, 错误信息: {}", JwtUtil.getCurrentUsername(), p, e.getMessage());
+                            log.error("[{}]删除目录失败，路径: {}, 错误信息: {}", JwtUtil.getCurrentUuid(), p, e.getMessage());
                             errorLogService.insertErrorLog(request, e, "删除目录" + path + "时" + "删除文件" + p + "失败：" + e.getMessage());
                         }
                     });
         } catch (IOException e) {
-            log.error("[{}]遍历目录失败，路径: {}, 错误信息: {}", JwtUtil.getCurrentUsername(), path, e.getMessage());
+            log.error("[{}]遍历目录失败，路径: {}, 错误信息: {}", JwtUtil.getCurrentUuid(), path, e.getMessage());
         }
     }
 
@@ -503,9 +503,9 @@ public class FileDirOperationController {
             resourceMapper.updateById(resource);
         }
 
-        log.info("[{}]更新资源路径成功，旧路径: {}, 新路径: {}", JwtUtil.getCurrentUsername(), path, newName);
+        log.info("[{}]更新资源路径成功，旧路径: {}, 新路径: {}", JwtUtil.getCurrentUuid(), path, newName);
         if (resources.isEmpty()) {
-            log.warn("[{}]没有找到资源路径: {}", JwtUtil.getCurrentUsername(), path);
+            log.warn("[{}]没有找到资源路径: {}", JwtUtil.getCurrentUuid(), path);
         }
 
     }

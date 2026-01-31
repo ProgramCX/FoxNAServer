@@ -41,7 +41,7 @@ public class OverviewWebsocket implements StatusCallback {
                 try {
                     session.close(new CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, "非法 token"));
                 } catch (IOException e) {
-                    log.error("[{}] WebSocket 连接关闭失败: {}", JwtUtil.getCurrentUsername(), e.getMessage());
+                    log.error("[{}] WebSocket 连接关闭失败: {}", JwtUtil.getCurrentUuid(), e.getMessage());
                 }
                 return;
             }
@@ -81,7 +81,7 @@ public class OverviewWebsocket implements StatusCallback {
                 try {
                     session.getBasicRemote().sendText(json);
                 } catch (Exception e) {
-                    log.error("[{}] WebSocket 发送消息失败: {}", JwtUtil.getCurrentUsername(), e.getMessage());
+                    log.error("[{}] WebSocket 发送消息失败: {}", JwtUtil.getCurrentUuid(), e.getMessage());
                 }
             }
         }

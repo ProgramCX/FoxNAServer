@@ -33,14 +33,13 @@ public class UserDetailService implements UserDetailsService {
             throw new UsernameNotFoundException(username + " not found");
         }
 
-
         LambdaQueryWrapper<Permission> permissionLambdaQueryWrapper = new LambdaQueryWrapper<>();
-        permissionLambdaQueryWrapper.eq(Permission::getOwnerName, username);
+        permissionLambdaQueryWrapper.eq(Permission::getOwnerUuid, user.getId());
 
         List<Permission> permissionList = permissionMapper.selectList(permissionLambdaQueryWrapper);
 
         return org.springframework.security.core.userdetails.User
-                .withUsername(user.getUserName())
+                .withUsername(user.getId())
                 .password(user.getPassword())
                 .authorities(permissionList.stream().map(Permission::getAreaName).toArray(String[]::new))
                 .build();

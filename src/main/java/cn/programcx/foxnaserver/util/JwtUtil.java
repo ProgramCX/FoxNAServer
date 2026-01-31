@@ -43,19 +43,32 @@ public class JwtUtil {
                 .compact();
     }
 
-    //生成 RefreshToken
-    public String generateRefreshToken(Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
-
-        List<String> roles = user.getAuthorities().stream()
+    // 生成 AccessToken（使用 uuid 作为 subject）
+    public String generateAccessTokenByUuid(String uuid, Collection<? extends GrantedAuthority> authorities) {
+        List<String> roles = authorities.stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
-        // 使用 JWT 库生成 token
+
         return Jwts.builder()
-                .setSubject(user.getUsername())
-                .claim("roles",roles)
+                .setSubject(uuid)
+                .claim("roles", roles)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_EXPIRATION))  // 设置过期时间为7天
+                .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRATION))
+                .signWith(SignatureAlgorithm.HS256, jwtProperties.getSecret())
+                .compact();
+    }
+
+    // 生成 RefreshToken（使用 uuid 作为 subject）
+    public String generateRefreshTokenByUuid(String uuid, Collection<? extends GrantedAuthority> authorities) {
+        List<String> roles = authorities.stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+
+        return Jwts.builder()
+                .setSubject(uuid)
+                .claim("roles", roles)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_EXPIRATION))
                 .signWith(SignatureAlgorithm.HS256, jwtProperties.getSecret())
                 .compact();
     }
@@ -92,7 +105,7 @@ public class JwtUtil {
         }
     }
 
-    public static String getCurrentUsername() {
+    public static String getCurrentUuid() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication != null && authentication.isAuthenticated()) {

@@ -10,7 +10,7 @@ import java.util.List;
 @NoArgsConstructor
 @Data
 public class ResourceDTO {
-    private String ownerName;
+    private String ownerUuid;
     private String folderName;
     private List<String> types;
 }

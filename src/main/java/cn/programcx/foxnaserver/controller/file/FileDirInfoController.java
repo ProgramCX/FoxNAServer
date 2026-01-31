@@ -6,9 +6,7 @@ import cn.programcx.foxnaserver.dto.file.FileInfo;
 import cn.programcx.foxnaserver.dto.file.PageResponse;
 import cn.programcx.foxnaserver.util.JwtUtil;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -115,7 +113,7 @@ public class FileDirInfoController {
         pageResponse.setTotalPage(total / pageSize + (total % pageSize == 0 ? 0 : 1));
 
         log.info("[{}]获取目录列表成功: {}, 页码: {}, 每页大小: {}, 排序字段: {}, 排序方式: {}, 本页实际个数：{}",
-                JwtUtil.getCurrentUsername(), path, page, pageSize, sortBy, order, pageList.size());
+                JwtUtil.getCurrentUuid(), path, page, pageSize, sortBy, order, pageList.size());
 
         return ResponseEntity.ok(pageResponse);
     }

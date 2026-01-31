@@ -14,7 +14,7 @@ public class Resource {
     @TableId(type = IdType.AUTO)
     private Long resourceId;
 
-    private String ownerName;
+    private String ownerUuid;
 
     private String folderName;
 

@@ -6,10 +6,7 @@ import cn.programcx.foxnaserver.mapper.ResourceMapper;
 import cn.programcx.foxnaserver.util.JwtUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +36,7 @@ public class FilePermissionGetController {
     )
     public ResponseEntity<List<AuthedDir>> getAuthedDirs() {
         LambdaQueryWrapper<Resource> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(Resource::getOwnerName, JwtUtil.getCurrentUsername());
+        lambdaQueryWrapper.eq(Resource::getOwnerUuid, JwtUtil.getCurrentUuid());
         List<Resource> resources = mapper.selectList(lambdaQueryWrapper);
 
         // 合并权限
@@ -60,7 +57,7 @@ public class FilePermissionGetController {
             authedDirs.add(dto);
         }
 
-        log.info("[{}]获取已授权目录列表成功！", JwtUtil.getCurrentUsername());
+        log.info("[{}]获取已授权目录列表成功！", JwtUtil.getCurrentUuid());
         return ResponseEntity.ok(authedDirs);
     }
 }
