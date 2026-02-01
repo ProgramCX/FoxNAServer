@@ -41,7 +41,12 @@ public class UserDetailService implements UserDetailsService {
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getId())
                 .password(user.getPassword())
-                .authorities(permissionList.stream().map(Permission::getAreaName).toArray(String[]::new))
+                .authorities(permissionList.stream()
+                        .map(Permission::getAreaName)
+                        .filter(area -> area != null && !area.isBlank())
+                        .map(String::toUpperCase)
+                        .distinct()
+                        .toArray(String[]::new))
                 .build();
     }
 }

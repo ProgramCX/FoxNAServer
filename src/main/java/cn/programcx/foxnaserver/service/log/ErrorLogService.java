@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -81,6 +83,32 @@ public class ErrorLogService {
     public Page<MongoErrorLog> findAllPaged(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdTime"));
         return errorLogMongoRepository.findAll(pageable);
+    }
+
+    public MongoErrorLog findById(String id) {
+        return errorLogMongoRepository.findById(id).orElse(null);
+    }
+
+    public Page<MongoErrorLog> search(String moduleName, String userName, String exceptionType,
+                                      LocalDateTime start, LocalDateTime end, int page, int size) {
+        List<MongoErrorLog> logs = errorLogMongoRepository.findAll(Sort.by(Sort.Direction.DESC, "createdTime"));
+
+        List<MongoErrorLog> filtered = logs.stream()
+                .filter(log -> moduleName == null || moduleName.isBlank() || moduleName.equals(log.getModuleName()))
+                .filter(log -> userName == null || userName.isBlank() || userName.equals(log.getUserName()))
+                .filter(log -> exceptionType == null || exceptionType.isBlank() || exceptionType.equals(log.getExceptionType()))
+                .filter(log -> start == null || !log.getCreatedTime().isBefore(start))
+                .filter(log -> end == null || !log.getCreatedTime().isAfter(end))
+                .collect(Collectors.toList());
+
+        int fromIndex = page * size;
+        if (fromIndex >= filtered.size()) {
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdTime"));
+            return new PageImpl<>(List.of(), pageable, filtered.size());
+        }
+        int toIndex = Math.min(fromIndex + size, filtered.size());
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdTime"));
+        return new PageImpl<>(filtered.subList(fromIndex, toIndex), pageable, filtered.size());
     }
 
     /**

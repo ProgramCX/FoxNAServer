@@ -4,6 +4,7 @@ import cn.programcx.foxnaserver.entity.Permission;
 import cn.programcx.foxnaserver.entity.User;
 import cn.programcx.foxnaserver.mapper.PermissionMapper;
 import cn.programcx.foxnaserver.mapper.UserMapper;
+import cn.programcx.foxnaserver.util.MailSenderUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,6 +24,8 @@ public class AuthenticationService {
     private VerificationService verificationService;
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private MailSenderUtil mailSenderUtil;
 
     public boolean registerAdmin() {
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
@@ -41,7 +44,7 @@ public class AuthenticationService {
 
         userMapper.insert(user);
 
-        List<String> areaList = List.of("FILE","STREAM","DDNS","EMAIL","USER");
+        List<String> areaList = List.of("FILE","STREAM","DDNS","EMAIL","USER","LOG");
 
         areaList.forEach(area -> {
             Permission permission = new Permission();
@@ -54,9 +57,9 @@ public class AuthenticationService {
         return true;
     }
 
-    public void registerUser(String userName,String password,String code) throws Exception {
+    public void registerUser(String userName,String emailAddr,String password,String code) throws Exception {
         try {
-            verificationService.verifyCode(userName, code);
+            verificationService.verifyCode(emailAddr, code);
         }catch (Exception e){
             throw new Exception("验证码验证失败：" + e.getMessage());
         }
@@ -67,10 +70,16 @@ public class AuthenticationService {
             throw new Exception("用户已存在！");
         }
 
+        queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getEmail, emailAddr);
+        if (userMapper.selectOne(queryWrapper) != null) {
+            throw new Exception("邮箱已被注册！");
+        }
+
         User user = new User();
         user.setUserName(userName);
         user.setPassword(passwordEncoder.encode(password));
-        user.setEmail(userName);
+        user.setEmail(emailAddr);
         user.setState("enabled");
         user.generateId();
 
@@ -95,5 +104,35 @@ public class AuthenticationService {
                 throw new Exception("用户已被禁用！");
             }
         }
+    }
+
+    public void resetPasswordByEmail(String emailAddr, String code, String newPassword) throws Exception {
+        verificationService.verifyCode(emailAddr, code);
+
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getEmail, emailAddr);
+        User user = userMapper.selectOne(queryWrapper);
+        if (user == null) {
+            throw new Exception("邮箱未绑定任何用户");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userMapper.updateById(user);
+    }
+
+    public void sendUsernameByEmail(String emailAddr, String code) throws Exception {
+        verificationService.verifyCode(emailAddr, code);
+
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getEmail, emailAddr);
+        User user = userMapper.selectOne(queryWrapper);
+        if (user == null) {
+            throw new Exception("邮箱未绑定任何用户");
+        }
+
+        String username = user.getUserName();
+        String subject = "FoxNa Server 用户名找回";
+        String content = "您的用户名是: " + username;
+        mailSenderUtil.sendMail(emailAddr, subject, content);
     }
 }

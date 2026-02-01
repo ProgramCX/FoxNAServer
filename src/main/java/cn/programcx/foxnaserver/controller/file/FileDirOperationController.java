@@ -29,6 +29,8 @@ import java.net.URLEncoder;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Slf4j
 @RestController
@@ -120,25 +122,23 @@ public class FileDirOperationController {
     }
 
     @Operation(
-            summary = "下载文件",
-            description = "下载指定路径的文件，支持断点续传"
+            summary = "下载文件或文件夹",
+            description = "下载指定路径的文件或文件夹，文件夹会自动打包为ZIP"
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "成功下载文件"),
-            @ApiResponse(responseCode = "206", description = "部分内容响应，支持断点续传"),
-            @ApiResponse(responseCode = "404", description = "文件未找到"),
-            @ApiResponse(responseCode = "400", description = "请求错误，例如目录不能下载")
+            @ApiResponse(responseCode = "200", description = "成功下载文件或ZIP包"),
+            @ApiResponse(responseCode = "206", description = "部分内容响应，支持断点续传（仅文件）"),
+            @ApiResponse(responseCode = "404", description = "文件或文件夹未找到")
     })
     @CheckFilePermission(type = "Read", paramFields = {"path"})
     @GetMapping("get")
-    public ResponseEntity<?> get(@RequestHeader(required = false,value = "Range") String Range,@RequestParam("path") String path) throws IOException {
+    public ResponseEntity<?> get(@RequestHeader(required = false,value = "Range") String Range,@RequestParam("path") String path, HttpServletRequest request) throws IOException {
         File file = new File(path);
         if (!file.exists()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         if (file.isDirectory()) {
-            //TODO: 压缩文件夹以便下载
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return downloadDirectory(path, request);
         }
 
         long fileLength = file.length();
@@ -178,6 +178,66 @@ public class FileDirOperationController {
         log.info("[{}]下载文件：{}, Range: {}, 起始字节: {}, 结束字节: {}, 文件长度: {}", JwtUtil.getCurrentUuid(), path, Range, start, end, fileLength);
 
         return new ResponseEntity<>(resource, headers, Range == null ? HttpStatus.OK : HttpStatus.PARTIAL_CONTENT);
+    }
+
+    private ResponseEntity<?> downloadDirectory(String path, HttpServletRequest request) {
+        File folder = new File(path);
+        if (!folder.exists()) {
+            log.warn("[{}]下载文件夹失败，路径不存在: {}", JwtUtil.getCurrentUuid(), path);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        if (!folder.isDirectory()) {
+            log.warn("[{}]下载文件夹失败，路径不是目录: {}", JwtUtil.getCurrentUuid(), path);
+            return ResponseEntity.badRequest().body(Map.of("status", "failed", "message", "路径不是文件夹"));
+        }
+
+        String zipFileName = folder.getName() + ".zip";
+        try {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            try (ZipOutputStream zipOut = new ZipOutputStream(byteArrayOutputStream)) {
+                zipFolder(folder.toPath(), folder.getName(), zipOut);
+            }
+            byte[] zipBytes = byteArrayOutputStream.toByteArray();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentLength(zipBytes.length);
+            headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(zipFileName, "UTF-8").replaceAll("\\+", "%20") + "\"");
+
+            log.info("[{}]下载文件夹成功: {}, 大小: {} bytes", JwtUtil.getCurrentUuid(), path, zipBytes.length);
+
+            return new ResponseEntity<>(zipBytes, headers, HttpStatus.OK);
+        } catch (IOException e) {
+            errorLogService.insertErrorLog(request, e, "打包文件夹 " + path + " 失败：" + e.getMessage());
+            log.error("[{}]下载文件夹失败: {}, 错误: {}", JwtUtil.getCurrentUuid(), path, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("status", "failed", "message", "打包文件夹失败"));
+        }
+    }
+
+    private void zipFolder(Path sourcePath, String entryName, ZipOutputStream zipOut) throws IOException {
+        File file = sourcePath.toFile();
+        if (file.isHidden()) {
+            return;
+        }
+        if (file.isDirectory()) {
+            File[] children = file.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    zipFolder(child.toPath(), entryName + "/" + child.getName(), zipOut);
+                }
+            }
+        } else {
+            ZipEntry zipEntry = new ZipEntry(entryName);
+            zipOut.putNextEntry(zipEntry);
+            byte[] buffer = new byte[8192];
+            try (FileInputStream fis = new FileInputStream(file)) {
+                int len;
+                while ((len = fis.read(buffer)) > 0) {
+                    zipOut.write(buffer, 0, len);
+                }
+            }
+            zipOut.closeEntry();
+        }
     }
 
 

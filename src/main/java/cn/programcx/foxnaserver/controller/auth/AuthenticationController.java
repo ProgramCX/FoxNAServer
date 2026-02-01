@@ -155,7 +155,7 @@ public class AuthenticationController {
     @PostMapping("/sendVerifyCode")
     @Operation(
             summary = "发送验证码",
-            description = "向指定邮箱发送验证码，用于用户注册或密码重置"
+            description = "向指定邮箱发送验证码，用于用户注册、密码重置或找回用户名"
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "验证码发送成功",
@@ -208,13 +208,70 @@ public class AuthenticationController {
     })
     public ResponseEntity<String> registerUser(@RequestBody RegisterRequest reg, HttpServletRequest request) {
         try {
-            authenticationService.registerUser(reg.getUsername(), reg.getPassword(), reg.getCode());
+            authenticationService.registerUser(reg.getUsername(),reg.getEmailAddr() ,reg.getPassword(), reg.getCode());
             log.info("用户[{}]注册成功！", reg.getUsername());
             return ResponseEntity.ok("User registered successfully");
         } catch (Exception e) {
             log.info("用户[{}]注册失败：{}", reg.getUsername(), e.getMessage());
             errorLogService.insertErrorLog(request, e, "用户注册失败: " + reg.getUsername() + "，原因：" + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Registration failed: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/password/reset")
+    @Operation(
+            summary = "重置密码",
+            description = "通过邮箱验证码重置密码"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "密码重置成功",
+                    content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Password reset successfully"))),
+            @ApiResponse(responseCode = "400", description = "密码重置失败",
+                    content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Password reset failed: reason")))
+    })
+    public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest resetRequest, HttpServletRequest request) {
+        if (resetRequest == null || resetRequest.getEmailAddr() == null || resetRequest.getEmailAddr().isBlank()
+                || resetRequest.getCode() == null || resetRequest.getCode().isBlank()
+                || resetRequest.getNewPassword() == null || resetRequest.getNewPassword().isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email, code and new password are required");
+        }
+
+        try {
+            authenticationService.resetPasswordByEmail(resetRequest.getEmailAddr(), resetRequest.getCode(), resetRequest.getNewPassword());
+            log.info("邮箱[{}]密码重置成功", resetRequest.getEmailAddr());
+            return ResponseEntity.ok("Password reset successfully");
+        } catch (Exception e) {
+            log.info("邮箱[{}]密码重置失败：{}", resetRequest.getEmailAddr(), e.getMessage());
+            errorLogService.insertErrorLog(request, e, "密码重置失败: " + resetRequest.getEmailAddr() + "，原因：" + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Password reset failed: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/username/retrieve")
+    @Operation(
+            summary = "找回用户名",
+            description = "通过邮箱验证码找回用户名，将用户名发送到邮箱"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "用户名已发送到邮箱",
+                    content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Username sent to email"))),
+            @ApiResponse(responseCode = "400", description = "找回失败",
+                    content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Username recovery failed: reason")))
+    })
+    public ResponseEntity<String> retrieveUsername(@RequestBody ForgotUsernameRequest forgotRequest, HttpServletRequest request) {
+        if (forgotRequest == null || forgotRequest.getEmailAddr() == null || forgotRequest.getEmailAddr().isBlank()
+                || forgotRequest.getCode() == null || forgotRequest.getCode().isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email and code are required");
+        }
+
+        try {
+            authenticationService.sendUsernameByEmail(forgotRequest.getEmailAddr(), forgotRequest.getCode());
+            log.info("邮箱[{}]找回用户名成功，用户名已发送", forgotRequest.getEmailAddr());
+            return ResponseEntity.ok("Username sent to email");
+        } catch (Exception e) {
+            log.info("邮箱[{}]找回用户名失败：{}", forgotRequest.getEmailAddr(), e.getMessage());
+            errorLogService.insertErrorLog(request, e, "找回用户名失败: " + forgotRequest.getEmailAddr() + "，原因：" + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Username recovery failed: " + e.getMessage());
         }
     }
 
@@ -288,7 +345,7 @@ public class AuthenticationController {
                     })
                     .collect(Collectors.toList());
 
-            // 生成新的 token（使用 uuid）
+            // 生成新的 token
             String newAccessToken = jwtUtil.generateAccessTokenByUuid(userUuid, authorities);
             String newRefreshToken = jwtUtil.generateRefreshTokenByUuid(userUuid, authorities);
 
@@ -330,10 +387,13 @@ class EmailRequest {
 class RegisterRequest {
     @Schema(description = "用户名", example = "user1")
     private String username;
+    @Schema(description = "邮箱地址", example = "programcx@qq.com")
+    private String emailAddr;
     @Schema(description = "密码", example = "password123")
     private String password;
     @Schema(description = "验证码", example = "123456")
     private String code;
+
 }
 
 @Data
@@ -342,4 +402,22 @@ class TokenResponse {
     private String accessToken;
     @Schema(description = "刷新令牌", example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
     private String refreshToken;
+}
+
+@Data
+class ResetPasswordRequest {
+    @Schema(description = "邮箱地址", example = "programcx@qq.com")
+    private String emailAddr;
+    @Schema(description = "验证码", example = "123456")
+    private String code;
+    @Schema(description = "新密码", example = "newPassword123")
+    private String newPassword;
+}
+
+@Data
+class ForgotUsernameRequest {
+    @Schema(description = "邮箱地址", example = "programcx@qq.com")
+    private String emailAddr;
+    @Schema(description = "验证码", example = "123456")
+    private String code;
 }

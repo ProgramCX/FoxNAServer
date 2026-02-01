@@ -45,7 +45,8 @@ public class UserManagementService {
             Map.of("name", "EMAIL", "description", "允许使用邮件服务"),
             Map.of("name", "STREAM", "description", "允许使用流媒体服务"),
             Map.of("name", "FILE", "description", "允许使用文件服务"),
-            Map.of("name", "DDNS", "description", "允许使用动态域名服务")
+            Map.of("name", "DDNS", "description", "允许使用动态域名服务"),
+            Map.of("name", "LOG", "description", "允许管理日志")
     );
 
     public void addUser(User user, List<Permission> permissionList, List<Resource> resourceList) throws Exception {

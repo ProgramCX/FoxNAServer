@@ -84,7 +84,7 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     private void sendCodeMail(String to, String code) throws Exception {
-        String subject = "FoxNa Server 验证码";
+        String subject = "FoxNAS 验证码";
         String content = "您的验证码是: " + code + "\n请在10分钟内使用该验证码。";
         mailSenderUtil.sendMail(to, subject, content);
     }
