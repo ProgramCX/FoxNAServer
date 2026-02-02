@@ -1,0 +1,88 @@
+version: '3.8'
+
+# 生产环境配置 - 使用外部数据库
+# 使用前请确保：
+# 1. 已创建 MySQL 数据库并导入初始 SQL
+# 2. Redis 服务已启动
+# 3. MongoDB 服务已启动（可选，用于日志存储）
+# 4. 已修改 config.properties 中的配置
+
+services:
+  foxnaserver:
+    image: your-dockerhub-username/foxnaserver:latest
+    container_name: foxnaserver
+    restart: unless-stopped
+    environment:
+      # ============================================
+      # 数据库配置（必填）
+      # ============================================
+      # MySQL 配置 - 修改为你的数据库地址
+      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/foxnas?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: foxnas
+      SPRING_DATASOURCE_PASSWORD: your_mysql_password
+
+      # Redis 配置 - 修改为你的 Redis 地址
+      SPRING_DATA_REDIS_HOST: localhost
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: your_redis_password
+
+      # MongoDB 配置（可选）- 修改为你的 MongoDB 地址
+      SPRING_DATA_MONGODB_HOST: localhost
+      SPRING_DATA_MONGODB_PORT: 27017
+      SPRING_DATA_MONGODB_DATABASE: foxnas_logs
+      # SPRING_DATA_MONGODB_USERNAME: mongo_user
+      # SPRING_DATA_MONGODB_PASSWORD: mongo_password
+
+      # ============================================
+      # JWT 安全配置（必填，生产环境必须修改）
+      # ============================================
+      # 强烈建议：使用随机生成的长字符串（至少 32 位）
+      # 生成命令：openssl rand -base64 32
+      JWT_SECRET: your-super-secret-key-change-this-in-production
+      JWT_EXPIRATION: 86400000
+
+      # ============================================
+      # 邮件配置（可选，用于找回密码等功能）
+      # ============================================
+      # 以 QQ 邮箱为例
+      SPRING_MAIL_HOST: smtp.qq.com
+      SPRING_MAIL_PORT: 465
+      SPRING_MAIL_USERNAME: your_email@qq.com
+      SPRING_MAIL_PASSWORD: your_email_auth_code
+
+      # ============================================
+      # 服务器配置
+      # ============================================
+      SERVER_PORT: 8080
+
+    volumes:
+      # 数据存储目录（用户上传的文件）
+      - ./data:/app/data
+      # 日志目录
+      - ./logs:/app/logs
+      # 配置文件（必须挂载，包含敏感信息）
+      - ./config.properties:/app/config.properties:ro
+
+    ports:
+      - "8080:8080"
+
+    # 使用 host 网络模式连接宿主机数据库（如果数据库在宿主机上）
+    # network_mode: host
+
+    # 或者使用自定义网络
+    networks:
+      - foxnas-network
+
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 60s
+      retries: 3
+
+# 如果需要连接宿主机上的数据库，可以使用 host 网络
+# 或者将数据库容器加入同一网络
+networks:
+  foxnas-network:
+    driver: bridge

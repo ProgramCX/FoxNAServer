@@ -1,0 +1,108 @@
+version: '3.8'
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: foxnas-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: foxnas_root_password
+      MYSQL_DATABASE: foxnas
+      MYSQL_USER: foxnas
+      MYSQL_PASSWORD: foxnas_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - foxnas-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: foxnas-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - foxnas-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # MongoDB 日志数据库
+  mongodb:
+    image: mongo:7
+    container_name: foxnas-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: foxnas_logs
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - foxnas-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FoxNAServer 应用
+  foxnaserver:
+    image: your-dockerhub-username/foxnaserver:latest
+    container_name: foxnaserver
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    environment:
+      # 数据库配置
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/foxnas?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: foxnas
+      SPRING_DATASOURCE_PASSWORD: foxnas_password
+      # Redis 配置
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      # MongoDB 配置
+      SPRING_DATA_MONGODB_HOST: mongodb
+      SPRING_DATA_MONGODB_PORT: 27017
+      SPRING_DATA_MONGODB_DATABASE: foxnas_logs
+      # JWT 配置（建议修改为强密码）
+      JWT_SECRET: your-strong-secret-key-here
+      JWT_EXPIRATION: 86400000
+    volumes:
+      # 挂载文件存储目录
+      - ./data:/app/data
+      # 挂载日志目录
+      - ./logs:/app/logs
+      # 挂载配置文件（可选）
+      - ./config.properties:/app/config.properties:ro
+    ports:
+      - "8080:8080"
+    networks:
+      - foxnas-network
+
+volumes:
+  mysql_data:
+  redis_data:
+  mongodb_data:
+
+networks:
+  foxnas-network:
+    driver: bridge

@@ -14,7 +14,7 @@
 
 [English](README.md) | 中文
 
-FoxNAS 服务端基于 **JDK 17** 和 **Spring Boot 2.6.13** 开发，提供 **定时广播发现设备**、**实时媒体流解码**、**文件系统管理** 等关键服务。适用于私有服务器、嵌入式设备、家庭 NAS 等场景，与 [FoxNAS 客户端](https://github.com/ProgramCX/FoxNAS) 搭配使用，实现高效、智能的 NAS 解决方案。
+FoxNAS 服务端基于 **JDK 17** 和 **Spring Boot 2.6.13** 开发，提供 **定时广播发现设备**、**实时媒体流解码**、**文件系统管理** 等关键服务。适用于私有服务器、嵌入式设备、家庭 NAS 等场景，与 [FoxNAS 客户端](https://github.com/ProgramCX/FoxNAS) 或者 [FoxNAS 网页端](https://github.com/ProgramCX/FoxNAS-Web) 搭配使用，实现高效、智能的 NAS 解决方案。
 
 ## 功能
 

@@ -28,7 +28,7 @@ public class StatusController {
                     schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string", example = "online")
             )
     )
-    @GetMapping("/")
+    @GetMapping("/status")
     private ResponseEntity<?> getStatus() {
         log.info("[{}]获取服务器状态成功", System.currentTimeMillis());
         return ResponseEntity.ok("online");

@@ -111,7 +111,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/state/**").authenticated()
                         .requestMatchers("/api/hardware/**").authenticated()
                         .requestMatchers("/api/user-self/**").authenticated()
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 );
         return http.build();
     }
