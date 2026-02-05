@@ -29,7 +29,7 @@ public class MailSenderUtil {
             
             helper.setTo(to);
             helper.setSubject(subject);
-            helper.setText(content, false);  // false 表示发送纯文本，true 表示发送 HTML
+            helper.setText(content, true);  // false 表示发送纯文本，true 表示发送 HTML
             helper.setFrom(mailUsername);
             
             mailSender.send(message);

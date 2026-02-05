@@ -8,6 +8,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.ui.ModelMap;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.context.IContext;
+import org.thymeleaf.spring6.SpringTemplateEngine;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class VerificationServiceImpl implements VerificationService {
@@ -18,7 +25,10 @@ public class VerificationServiceImpl implements VerificationService {
 
     @Autowired
     private MailSenderUtil mailSenderUtil;
-    
+
+    @Autowired
+    private SpringTemplateEngine templateEngine;
+
     @Override
     public void sendVerificationCode(String to) throws Exception {
         logger.info("开始发送验证码，邮箱: {}", to);
@@ -84,8 +94,10 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     private void sendCodeMail(String to, String code) throws Exception {
+        Context context = new Context();
+        context.setVariable("code",code);
+        String htmlContent = templateEngine.process("emailCodeTemplate", context); // emailTemplate 是模板的文件名
         String subject = "FoxNAS 验证码";
-        String content = "您的验证码是: " + code + "\n请在10分钟内使用该验证码。";
-        mailSenderUtil.sendMail(to, subject, content);
+        mailSenderUtil.sendMail(to, subject, htmlContent);
     }
 }

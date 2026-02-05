@@ -11,6 +11,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import java.util.List;
 
@@ -29,6 +31,8 @@ public class AuthenticationService {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private MailSenderUtil mailSenderUtil;
+    @Autowired
+    private SpringTemplateEngine springTemplateEngine;
 
     public boolean registerAdmin() {
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
@@ -99,7 +103,7 @@ public class AuthenticationService {
     }
 
     public void iniPermissionForNewUser(User user) throws Exception {
-        List<String> areaList = List.of("FILE","STREAM","DDNS","EMAIL","USER","LOG","SSH");
+        List<String> areaList = List.of("LOG");
         areaList.forEach(area -> {
             Permission permission = new Permission();
             permission.setOwnerUuid(user.getId());
@@ -147,7 +151,10 @@ public class AuthenticationService {
 
         String username = user.getUserName();
         String subject = "FoxNa Server 用户名找回";
-        String content = "您的用户名是: " + username;
+
+        Context context = new Context();
+        context.setVariable("username", username);
+        String content = springTemplateEngine.process("emailFindUsername", context);
         mailSenderUtil.sendMail(emailAddr, subject, content);
     }
 }

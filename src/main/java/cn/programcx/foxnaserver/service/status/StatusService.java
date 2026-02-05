@@ -50,14 +50,7 @@ public class StatusService {
 
             resourceGetIds.add(sessionId);
 
-            prevNetBytesRecv = new long[networkIFs.size()];
-            prevNetBytesSent = new long[networkIFs.size()];
-            for (int i = 0; i < networkIFs.size(); i++) {
-                networkIFs.get(i).updateAttributes();
-                prevNetBytesRecv[i] = networkIFs.get(i).getBytesRecv();
-                prevNetBytesSent[i] = networkIFs.get(i).getBytesSent();
-            }
-
+          iniStatistics();
             Runnable runnable = ()->{
                 collectMetrics();
                     try {
@@ -72,8 +65,16 @@ public class StatusService {
             };
 
         scheduledFuture =  scheduler.scheduleAtFixedRate(runnable, 0, 1, TimeUnit.SECONDS);
+    }
 
-
+    public void iniStatistics(){
+        prevNetBytesRecv = new long[networkIFs.size()];
+        prevNetBytesSent = new long[networkIFs.size()];
+        for (int i = 0; i < networkIFs.size(); i++) {
+            networkIFs.get(i).updateAttributes();
+            prevNetBytesRecv[i] = networkIFs.get(i).getBytesRecv();
+            prevNetBytesSent[i] = networkIFs.get(i).getBytesSent();
+        }
     }
 
     public void stopMonitor(String sessionId) {
@@ -96,14 +97,16 @@ public class StatusService {
         }
     }
 
-    private double getCPUUsage() {
+    // 获取CPU使用率
+    public double getCPUUsage() {
         long[] ticks = cpu.getSystemCpuLoadTicks();
         double cpuLoad = cpu.getSystemCpuLoadBetweenTicks(prevCpuTicks);
         prevCpuTicks = ticks;
         return cpuLoad * 100;
     }
 
-    private Map<String,Object> getMemoryInfo() {
+    // 获取内存信息
+    public Map<String,Object> getMemoryInfo() {
         double total = memory.getTotal();
         double used = total - memory.getAvailable();
         Map<String,Object> map = new HashMap<>();
@@ -112,7 +115,8 @@ public class StatusService {
         return map;
     }
 
-    private List<Map<String, Object>> getDiskInfo() {
+    // 获取磁盘信息
+    public List<Map<String, Object>> getDiskInfo() {
         List<OSFileStore> fsList = os.getFileSystem().getFileStores();
         List<Map<String, Object>> list = new ArrayList<>();
         for (OSFileStore fs : fsList) {
@@ -126,7 +130,8 @@ public class StatusService {
         return list;
     }
 
-    private List<Map<String, Object>> getNetworkInfo() {
+    // 获取网络信息
+    public List<Map<String, Object>> getNetworkInfo() {
         List<Map<String, Object>> list = new ArrayList<>();
         for (int i = 0; i < networkIFs.size(); i++) {
             NetworkIF net = networkIFs.get(i);

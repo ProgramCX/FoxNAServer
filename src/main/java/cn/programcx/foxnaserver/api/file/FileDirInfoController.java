@@ -1,4 +1,4 @@
-package cn.programcx.foxnaserver.controller.file;
+package cn.programcx.foxnaserver.api.file;
 
 import cn.programcx.foxnaserver.annotation.CheckFilePermission;
 

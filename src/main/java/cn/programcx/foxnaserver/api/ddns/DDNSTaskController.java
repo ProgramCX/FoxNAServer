@@ -1,4 +1,4 @@
-package cn.programcx.foxnaserver.controller.ddns;
+package cn.programcx.foxnaserver.api.ddns;
 
 import cn.programcx.foxnaserver.dto.ddns.DDNSTaskStatus;
 import cn.programcx.foxnaserver.entity.AccessSecret;

@@ -1,4 +1,4 @@
-package cn.programcx.foxnaserver.controller.hardware;
+package cn.programcx.foxnaserver.api.hardware;
 
 import cn.programcx.foxnaserver.common.Result;
 import cn.programcx.foxnaserver.dto.hardware.HardwareInfoDTO;

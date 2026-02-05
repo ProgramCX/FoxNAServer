@@ -13,7 +13,7 @@ import java.util.UUID;
 public class User {
 
     @TableId(value = "id")
-    private String id;
+    private String id = UUID.randomUUID().toString().replace("-", "");
 
     private String userName;
     private String state;

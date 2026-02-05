@@ -1,6 +1,6 @@
 package cn.programcx.foxnaserver.security;
 
-import cn.programcx.foxnaserver.controller.auth.TokenStorageService;
+import cn.programcx.foxnaserver.api.auth.TokenStorageService;
 import cn.programcx.foxnaserver.util.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +10,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.token.TokenService;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.FilterChain;

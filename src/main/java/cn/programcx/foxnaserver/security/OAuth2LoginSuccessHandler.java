@@ -1,6 +1,6 @@
 package cn.programcx.foxnaserver.security;
 
-import cn.programcx.foxnaserver.controller.auth.TokenStorageService;
+import cn.programcx.foxnaserver.api.auth.TokenStorageService;
 import cn.programcx.foxnaserver.entity.User;
 import cn.programcx.foxnaserver.entity.UserOAuth;
 import cn.programcx.foxnaserver.service.auth.AuthenticationService;

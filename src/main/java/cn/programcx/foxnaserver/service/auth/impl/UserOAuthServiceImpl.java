@@ -1,6 +1,6 @@
 package cn.programcx.foxnaserver.service.auth.impl;
 
-import cn.programcx.foxnaserver.controller.auth.TokenStorageService;
+import cn.programcx.foxnaserver.api.auth.TokenStorageService;
 import cn.programcx.foxnaserver.dto.auth.ActivateResponse;
 import cn.programcx.foxnaserver.dto.auth.ActivateUserOAuth;
 import cn.programcx.foxnaserver.entity.User;
@@ -9,15 +9,11 @@ import cn.programcx.foxnaserver.mapper.UserMapper;
 import cn.programcx.foxnaserver.mapper.UserOAuthMapper;
 import cn.programcx.foxnaserver.service.auth.UserOAuthService;
 import cn.programcx.foxnaserver.service.auth.VerificationService;
-import cn.programcx.foxnaserver.service.user.UserDetailService;
 import cn.programcx.foxnaserver.service.user.UserService;
 import cn.programcx.foxnaserver.util.JwtUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.gson.Gson;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -28,7 +24,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 

@@ -1,4 +1,4 @@
-package cn.programcx.foxnaserver.controller.log;
+package cn.programcx.foxnaserver.api.log;
 
 import cn.programcx.foxnaserver.entity.MongoErrorLog;
 import cn.programcx.foxnaserver.service.log.ErrorLogService;

@@ -1,4 +1,4 @@
-package cn.programcx.foxnaserver.controller.auth;
+package cn.programcx.foxnaserver.api.auth;
 
 import cn.programcx.foxnaserver.entity.User;
 import cn.programcx.foxnaserver.exception.VerificationCodeColdTimeException;

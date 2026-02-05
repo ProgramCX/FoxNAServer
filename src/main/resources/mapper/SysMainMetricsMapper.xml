@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.programcx.foxnaserver.mapper.SysMainMetricsMapper">
+    <resultMap id="SysMainMetricsMap" type="cn.programcx.foxnaserver.entity.monitor.SysMainMetrics">
+        <id property="id" column="sm_id" />
+        <result property="cpu" column="cpu" />
+        <result property="totalMemory" column="total_memory" />
+        <result property="usedMemory" column="used_memory" />
+        <result property="uploadSpeed" column="upload_speed" />
+        <result property="downloadSpeed" column="download_speed" />
+        <result property="timestamp" column="timestamp" />
+        <collection property="diskMetricsList" ofType="cn.programcx.foxnaserver.entity.monitor.SysDiskMetrics">
+            <id property="id" column="disk_id" />
+            <result property="diskName" column="disk_name" />
+            <result property="usedSpace" column="used_space" />
+            <result property="totalSpace" column="total_space" />
+        </collection>
+    </resultMap>
+    
+    <select id="selectRecentMetrics" resultMap="SysMainMetricsMap">
+        <if test="groupSeconds != null and groupSeconds &gt; 0">
+            select
+               UUID() as sm_id,
+                AVG(sm.cpu) as cpu,
+                AVG(sm.total_memory) as total_memory,
+                AVG(sm.used_memory) as used_memory,
+                AVG(sm.upload_speed) as upload_speed,
+                AVG(sm.download_speed) as download_speed,
+                MAX(sm.timestamp) as timestamp,
+                sd.id as disk_id,
+                sd.disk_name,
+                AVG(sd.used_space) as used_space,
+                AVG(sd.total_space) as total_space
+            from
+                sys_main_metrics sm
+            left join sys_disk_metrics sd
+                on sd.main_id = sm.id
+            WHERE sm.timestamp BETWEEN #{startTime} AND #{endTime}
+            GROUP BY FLOOR(UNIX_TIMESTAMP(sm.timestamp) / #{groupSeconds}), sd.id
+            ORDER BY MAX(sm.timestamp) ASC
+        </if>
+        <if test="groupSeconds == null or groupSeconds == 0">
+            select
+                sm.id as sm_id,
+                sm.cpu,
+                sm.total_memory,
+                sm.used_memory,
+                sm.upload_speed,
+                sm.download_speed,
+                sm.timestamp,
+                sd.id as disk_id,
+                sd.disk_name,
+                sd.used_space,
+                sd.total_space
+            from
+                sys_main_metrics sm
+            left join sys_disk_metrics sd
+                on sd.main_id = sm.id
+            WHERE sm.timestamp BETWEEN #{startTime} AND #{endTime}
+            ORDER BY sm.timestamp ASC
+        </if>
+    </select>
+</mapper>

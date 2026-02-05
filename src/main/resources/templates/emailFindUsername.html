@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>验证码邮件</title>
+</head>
+<body>
+<div class="container">
+    <div style="width:665px;margin:0 auto;border:1px solid #dcdcdc;background:#ffffff"><h2
+            style="height:56px;line-height:56px;margin:0;color:#ffffff;font-size:20px;background-image:linear-gradient(135deg,#43CBFF 15%,#9708CC 100%);padding-left:30px;font-weight:normal">
+        FoxNAS 找回用户名</h2>
+        <div style="padding:50px 0;margin:0 30px;font-size:13px;border-bottom:1px solid #ebebeb;"><h3
+                style="color:#000000;font-size:15px;margin:0;margin-bottom:4px;">亲爱的用户：</h3>您正在找回用户名，用户名是：<b
+                style="font-size:26px;color:#43CBFF;margin-bottom:20px;display:block;margin-top:10px;" th:text="${username}"></b>
+        </div>
+        <div style="color:#898989;font-size:10px;background:#fcfcfc;padding:18px 30px;">本邮件由系统自动发出，请勿直接回复。
+            谢谢！
+        </div>
+    </div>
+</div>
+</body>
+</html>

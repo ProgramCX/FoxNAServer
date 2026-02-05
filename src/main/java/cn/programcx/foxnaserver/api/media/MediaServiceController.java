@@ -1,4 +1,4 @@
-package cn.programcx.foxnaserver.controller.media;
+package cn.programcx.foxnaserver.api.media;
 
 import cn.programcx.foxnaserver.annotation.CheckFilePermission;
 import cn.programcx.foxnaserver.dto.media.MediaInfoDTO;

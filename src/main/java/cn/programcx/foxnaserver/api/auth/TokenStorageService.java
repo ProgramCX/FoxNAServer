@@ -1,4 +1,4 @@
-package cn.programcx.foxnaserver.controller.auth;
+package cn.programcx.foxnaserver.api.auth;
 
 import cn.programcx.foxnaserver.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;

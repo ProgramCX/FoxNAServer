@@ -1,11 +1,9 @@
-package cn.programcx.foxnaserver.controller.auth.oauth;
+package cn.programcx.foxnaserver.api.auth.oauth;
 
 import cn.programcx.foxnaserver.dto.auth.ActivateResponse;
 import cn.programcx.foxnaserver.dto.auth.ActivateUserOAuth;
-import cn.programcx.foxnaserver.entity.User;
 import cn.programcx.foxnaserver.service.auth.UserOAuthService;
 import cn.programcx.foxnaserver.util.JwtUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

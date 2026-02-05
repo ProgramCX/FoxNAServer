@@ -128,6 +128,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/state/**").authenticated()
                         .requestMatchers("/api/hardware/**").authenticated()
                         .requestMatchers("/api/user-self/**").authenticated()
+                        .requestMatchers("/api/monitor/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 // OAuth 2
