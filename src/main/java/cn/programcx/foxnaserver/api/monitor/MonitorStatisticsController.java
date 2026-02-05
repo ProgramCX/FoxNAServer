@@ -81,8 +81,16 @@ public class MonitorStatisticsController {
     }
 
     @Getter
-    private static class MetricsRangeRequest {
+    public static class MetricsRangeRequest {
         private Long startMills;
         private Long endMills;
+        
+        public void setStartMills(Long startMills) {
+            this.startMills = startMills;
+        }
+        
+        public void setEndMills(Long endMills) {
+            this.endMills = endMills;
+        }
     }
 }
