@@ -7,11 +7,14 @@ import cn.programcx.foxnaserver.mapper.UserMapper;
 import cn.programcx.foxnaserver.util.MailSenderUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Transactional
 @Service
 public class AuthenticationService {
 
@@ -95,6 +98,17 @@ public class AuthenticationService {
 
     }
 
+    public void iniPermissionForNewUser(User user) throws Exception {
+        List<String> areaList = List.of("FILE","STREAM","DDNS","EMAIL","USER","LOG","SSH");
+        areaList.forEach(area -> {
+            Permission permission = new Permission();
+            permission.setOwnerUuid(user.getId());
+            permission.setAreaName(area);
+            permissionMapper.insert(permission);
+        });
+    }
+
+
     public void checkUserStatus(String username) throws Exception{
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(User::getUserName, username);
@@ -105,6 +119,7 @@ public class AuthenticationService {
             }
         }
     }
+
 
     public void resetPasswordByEmail(String emailAddr, String code, String newPassword) throws Exception {
         verificationService.verifyCode(emailAddr, code);

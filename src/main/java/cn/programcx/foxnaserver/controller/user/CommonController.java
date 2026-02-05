@@ -69,4 +69,16 @@ public class CommonController {
 
         return new ResponseEntity<>(permissionsString, HttpStatus.OK);
     }
+
+    @GetMapping("/permissionsByUuid")
+    public ResponseEntity<?> userPermission(@RequestParam(value = "uuid") String uuid) {
+        try{
+            LambdaQueryWrapper<Permission> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(Permission::getOwnerUuid, uuid);
+            List<Permission> permissions = permissionMapper.selectList(queryWrapper);
+            return ResponseEntity.ok(permissions);
+        }catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
 }

@@ -1,11 +1,16 @@
 package cn.programcx.foxnaserver.config;
 
+import cn.programcx.foxnaserver.security.HttpCookieOAuth2AuthorizationRequestRepository;
 import cn.programcx.foxnaserver.security.JwtAuthenticationFilter;
+import cn.programcx.foxnaserver.security.OAuth2LoginFailureHandler;
+import cn.programcx.foxnaserver.security.OAuth2LoginSuccessHandler;
 import cn.programcx.foxnaserver.service.user.UserDetailService;
 import cn.programcx.foxnaserver.util.JwtUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -24,12 +29,22 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     @Autowired
     private UserDetailService userDetailsService;
+
+    @Autowired
+    private OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+
+    @Autowired
+    private OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
+
+    @Autowired
+    private HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository;
 
     private final JwtUtil jwtUtil;
 
@@ -90,6 +105,7 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/oauth2/**").permitAll()
                         .requestMatchers("/ws/overview/**").permitAll()
                         .requestMatchers("/api/status/**").permitAll()
                         .requestMatchers("/doc.html").permitAll()
@@ -98,6 +114,7 @@ public class SecurityConfig {
                         .requestMatchers("/favicon.ico").permitAll()
                         .requestMatchers("/swagger-ui/**").permitAll()
                         .requestMatchers("/api-docs/**").permitAll()
+                        .requestMatchers("/api/login/oauth2/**").permitAll()
                         .requestMatchers("/api/file/media/validate").hasAuthority("FILE")
                         .requestMatchers("/api/file/media/metadata").hasAuthority("FILE")
                         .requestMatchers("/api/file/media/**").permitAll()
@@ -112,7 +129,23 @@ public class SecurityConfig {
                         .requestMatchers("/api/hardware/**").authenticated()
                         .requestMatchers("/api/user-self/**").authenticated()
                         .anyRequest().permitAll()
-                );
+                )
+                // OAuth 2
+                .oauth2Login(
+                        oauth2-> oauth2
+                                .authorizationEndpoint(authorization ->
+                                        authorization
+                                                .baseUri("/api/oauth2/authorization")
+                                                .authorizationRequestRepository(cookieAuthorizationRequestRepository)
+                                )
+                                .redirectionEndpoint(redirection ->
+                                        redirection.baseUri("/api/login/oauth2/code/*")
+                                )
+                                .successHandler(oAuth2LoginSuccessHandler)
+                                .failureHandler(oAuth2LoginFailureHandler)
+
+                )
+        ;
         return http.build();
     }
 

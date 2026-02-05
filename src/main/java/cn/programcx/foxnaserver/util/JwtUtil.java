@@ -43,7 +43,7 @@ public class JwtUtil {
                 .compact();
     }
 
-    // 生成 AccessToken（使用 uuid 作为 subject）
+    // 生成 AccessToken
     public String generateAccessTokenByUuid(String uuid, Collection<? extends GrantedAuthority> authorities) {
         List<String> roles = authorities.stream()
                 .map(GrantedAuthority::getAuthority)
