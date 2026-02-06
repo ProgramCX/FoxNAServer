@@ -73,8 +73,14 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             Object emailObj = oAuth2User.getAttribute("email");
             email = emailObj == null ? null : emailObj.toString();
 
+        }else if("qq".equals(registrationId)){
+            oauthId = oAuth2User.getAttribute("openid").toString();
+            username = new StringBuilder(oAuth2User.getAttribute("nickname").toString());
+            Object emailObj = oAuth2User.getAttribute("email");
+            email = emailObj == null ? null : emailObj.toString();
+
         }else {
-            throw new IllegalStateException("Unsupported registration id");
+            throw new IllegalStateException("Unsupported registration id: " + registrationId);
         }
 
         //本地数据库操作

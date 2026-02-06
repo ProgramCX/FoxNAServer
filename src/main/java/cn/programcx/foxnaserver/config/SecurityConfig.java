@@ -4,6 +4,8 @@ import cn.programcx.foxnaserver.security.HttpCookieOAuth2AuthorizationRequestRep
 import cn.programcx.foxnaserver.security.JwtAuthenticationFilter;
 import cn.programcx.foxnaserver.security.OAuth2LoginFailureHandler;
 import cn.programcx.foxnaserver.security.OAuth2LoginSuccessHandler;
+import cn.programcx.foxnaserver.security.qq.QQOAuth2AccessTokenResponseClient;
+import cn.programcx.foxnaserver.security.qq.QQOAuth2UserService;
 import cn.programcx.foxnaserver.service.user.UserDetailService;
 import cn.programcx.foxnaserver.util.JwtUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,13 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.endpoint.DefaultAuthorizationCodeTokenResponseClient;
+import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
+import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
+import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -46,10 +55,52 @@ public class SecurityConfig {
     @Autowired
     private HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository;
 
+    @Autowired
+    private QQOAuth2AccessTokenResponseClient qqOAuth2AccessTokenResponseClient;
+
+    @Autowired
+    private QQOAuth2UserService qqOAuth2UserService;
+
     private final JwtUtil jwtUtil;
 
     public SecurityConfig(JwtUtil jwtUtil ) {
         this.jwtUtil = jwtUtil;
+    }
+
+    /**
+     * 配置 OAuth2 Access Token Response Client
+     * 使用自定义的 QQ OAuth2 Client 来处理 JSONP 格式响应
+     */
+    @Bean
+    public OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient() {
+        DefaultAuthorizationCodeTokenResponseClient defaultClient = new DefaultAuthorizationCodeTokenResponseClient();
+
+        return request -> {
+            // 如果是 QQ OAuth，使用自定义的 Client
+            if ("qq".equals(request.getClientRegistration().getRegistrationId())) {
+                return qqOAuth2AccessTokenResponseClient.getTokenResponse(request);
+            }
+            // 其他 OAuth 使用默认 Client
+            return defaultClient.getTokenResponse(request);
+        };
+    }
+
+    /**
+     * 配置 OAuth2 User Service
+     * 使用自定义的 QQ OAuth2 User Service 来处理 QQ 的用户信息获取
+     */
+    @Bean
+    public OAuth2UserService<OAuth2UserRequest, OAuth2User> oAuth2UserService() {
+        DefaultOAuth2UserService defaultUserService = new DefaultOAuth2UserService();
+
+        return userRequest -> {
+            // 如果是 QQ OAuth，使用自定义的 User Service
+            if ("qq".equals(userRequest.getClientRegistration().getRegistrationId())) {
+                return qqOAuth2UserService.loadUser(userRequest);
+            }
+            // 其他 OAuth 使用默认 User Service
+            return defaultUserService.loadUser(userRequest);
+        };
     }
 
     // 配置密码加密器 - 使用BCrypt进行密码Hash
@@ -141,6 +192,12 @@ public class SecurityConfig {
                                 )
                                 .redirectionEndpoint(redirection ->
                                         redirection.baseUri("/api/login/oauth2/code/*")
+                                )
+                                .tokenEndpoint(tokenEndpoint ->
+                                        tokenEndpoint.accessTokenResponseClient(accessTokenResponseClient())
+                                )
+                                .userInfoEndpoint(userInfo ->
+                                        userInfo.userService(oAuth2UserService())
                                 )
                                 .successHandler(oAuth2LoginSuccessHandler)
                                 .failureHandler(oAuth2LoginFailureHandler)
