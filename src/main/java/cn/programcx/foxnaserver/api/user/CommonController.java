@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/common")
@@ -78,6 +79,31 @@ public class CommonController {
             List<Permission> permissions = permissionMapper.selectList(queryWrapper);
             return ResponseEntity.ok(permissions);
         }catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @Operation(
+            summary = "获取当前用户信息",
+            description = "根据 UUID 获取用户的基本信息（用户名和状态）"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功获取用户信息"),
+            @ApiResponse(responseCode = "404", description = "用户未找到")
+    })
+    @GetMapping("/userInfo")
+    public ResponseEntity<?> getUserInfo(@RequestParam(value = "uuid") String uuid) {
+        try {
+            User user = userMapper.selectById(uuid);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            }
+            // 只返回用户名和状态，不返回密码等敏感信息
+            return ResponseEntity.ok(Map.of(
+                    "userName", user.getUserName(),
+                    "state", user.getState()
+            ));
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }

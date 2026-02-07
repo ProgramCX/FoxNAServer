@@ -15,6 +15,7 @@ import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Transactional
 @Service
@@ -156,5 +157,44 @@ public class AuthenticationService {
         context.setVariable("username", username);
         String content = springTemplateEngine.process("emailFindUsername", context);
         mailSenderUtil.sendMail(emailAddr, subject, content);
+    }
+
+    /**
+     * 验证用户密码
+     * @param username 用户名
+     * @param password 明文密码
+     * @return 密码是否正确
+     */
+    public boolean verifyPassword(String username, String password) {
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getUserName, username);
+        User user = userMapper.selectOne(queryWrapper);
+        if (user == null) {
+            return false;
+        }
+        return passwordEncoder.matches(password, user.getPassword());
+    }
+
+    /**
+     * 获取用户权限列表
+     * @param username 用户名
+     * @return 用户权限列表
+     */
+    public List<GrantedAuthority> getUserAuthorities(String username) {
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getUserName, username);
+        User user = userMapper.selectOne(queryWrapper);
+        
+        if (user == null) {
+            return List.of();
+        }
+        
+        List<Permission> permissions = permissionMapper.selectList(
+                new LambdaQueryWrapper<Permission>().eq(Permission::getOwnerUuid, user.getId())
+        );
+        
+        return permissions.stream()
+                .map(p -> (GrantedAuthority) () -> "ROLE_" + p.getAreaName().toUpperCase())
+                .collect(Collectors.toList());
     }
 }

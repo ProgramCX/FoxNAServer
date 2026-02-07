@@ -109,6 +109,17 @@ public class UserOAuthServiceImpl extends ServiceImpl<UserOAuthMapper, UserOAuth
         redisTemplate.delete(key);
     }
 
+    @Override
+    public boolean validatePassword(String uuid, String password)  {
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getId,uuid);
+        User user = userMapper.selectOne(queryWrapper);
+        if(user==null){
+            return false;
+        }
+        return passwordEncoder.matches(password,user.getPassword());
+    }
+
 
     public void sendActivationEmailCode(String email) throws Exception {
         verificationService.sendVerificationCode(email);

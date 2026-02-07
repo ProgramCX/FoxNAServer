@@ -28,4 +28,6 @@ public interface  UserOAuthService extends IService<UserOAuth> {
     public void saveTicketByProviderOAuthId(String provider, String oAuthId, String ticket) throws Exception;
 
     public void deleteTicketByTicket(String ticket) throws Exception;
+
+    public boolean validatePassword(String uuid, String password);
 }

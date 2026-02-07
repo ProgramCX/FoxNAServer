@@ -69,16 +69,23 @@ public class HttpCookieOAuth2AuthorizationRequestRepository implements Authoriza
             log.warn("OAuth2 authorization request cookie size ({} bytes) exceeds 4KB limit, may cause issues", serialized.length());
         }
 
-        // 使用 ResponseCookie 支持 SameSite 属性，解决跨域问题
+        // 根据请求是否安全（HTTPS）动态设置 SameSite 和 Secure
+        boolean isSecure = request.isSecure();
+        String sameSite = isSecure ? "None" : "Lax";
+        
         ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie
                 .from(OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME, serialized)
                 .path("/")
                 .httpOnly(true)
                 .maxAge(COOKIE_EXPIRE_SECONDS)
-                .sameSite("Lax");  // 使用 Lax 允许同站跨端口访问
+                .sameSite(sameSite);
+        
+        if (isSecure) {
+            cookieBuilder.secure(true);
+        }
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookieBuilder.build().toString());
-        log.debug("Authorization request cookie saved successfully");
+        log.debug("Authorization request cookie saved successfully, sameSite={}, secure={}", sameSite, isSecure);
     }
 
     @Override
@@ -121,14 +128,21 @@ public class HttpCookieOAuth2AuthorizationRequestRepository implements Authoriza
      */
     private void deleteCookie(HttpServletRequest request, HttpServletResponse response, String name) {
         // 使用 ResponseCookie 删除 Cookie，保持 SameSite 一致性
-        ResponseCookie cookie = ResponseCookie
+        boolean isSecure = request.isSecure();
+        String sameSite = isSecure ? "None" : "Lax";
+        
+        ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie
                 .from(name, "")
                 .path("/")
                 .maxAge(0)
-                .sameSite("Lax")
-                .build();
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-        log.debug("Cookie {} deleted", name);
+                .sameSite(sameSite);
+        
+        if (isSecure) {
+            cookieBuilder.secure(true);
+        }
+        
+        response.addHeader(HttpHeaders.SET_COOKIE, cookieBuilder.build().toString());
+        log.debug("Cookie {} deleted, sameSite={}, secure={}", name, sameSite, isSecure);
     }
 
     /**

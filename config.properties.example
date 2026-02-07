@@ -118,6 +118,33 @@ logging.logback.rollingpolicy.max-history=30
 mybatis-plus.configuration.log-impl=org.apache.ibatis.logging.stdout.StdOutImpl
 
 # ============================================
+# OAuth2 配置（可选，用于第三方登录）
+# ============================================
+
+# 前端地址（用于 OAuth 回调跳转）
+oauth.frontend.base.url=http://localhost:5173
+
+# 后端地址（用于 OAuth 回调，不配置则使用默认）
+# oauth.base.url=http://localhost:8080
+
+# GitHub OAuth
+spring.security.oauth2.client.registration.github.client-id=your_github_client_id
+spring.security.oauth2.client.registration.github.client-secret=your_github_client_secret
+
+# QQ OAuth
+spring.security.oauth2.client.registration.qq.client-id=your_qq_app_id
+spring.security.oauth2.client.registration.qq.client-secret=your_qq_app_key
+
+# Microsoft OAuth（需要同时配置 microsoft.client.id 和 microsoft.client.secret 才会启用）
+# 配置步骤：
+# 1. 在 Azure Portal (https://portal.azure.com) 注册应用
+# 2. 获取应用 ID (client-id) 和 客户端密码 (client-secret)
+# 3. 添加平台：Web，重定向 URI: http://localhost:8080/login/oauth2/code/microsoft
+# 4. 启用访问令牌和 ID 令牌
+microsoft.client.id=your_microsoft_client_id
+microsoft.client.secret=your_microsoft_client_secret
+
+# ============================================
 # 服务器配置
 # ============================================
 

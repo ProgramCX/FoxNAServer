@@ -52,7 +52,7 @@ public class TokenStorageService {
 
     // 根据 token 值删除 AccessToken（用于登出）
     public void deleteAccessTokenByToken(String token) {
-        String uuid = jwtUtil.getUsername(token);
+        String uuid = jwtUtil.getUuid(token);
         if (uuid != null) {
             deleteAccessToken(uuid);
         }

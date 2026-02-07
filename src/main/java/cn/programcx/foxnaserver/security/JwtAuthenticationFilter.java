@@ -44,7 +44,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = authHeader.substring(7);
 
             if (jwtUtil.isTokenValid(token)) {
-                String username = jwtUtil.getUsername(token);
+                String username = jwtUtil.getUuid(token);
 
                 // Redis 中没有token，可能是登出时候删除了
                 if(!tokenStorageService.isTokenRedisValid(token, username)) {

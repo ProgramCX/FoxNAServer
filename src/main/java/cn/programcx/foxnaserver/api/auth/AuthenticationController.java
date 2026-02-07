@@ -311,6 +311,152 @@ public class AuthenticationController {
         return ResponseEntity.ok(Map.of("required", false));
     }
 
+    @PostMapping("/login/email")
+    @Operation(
+            summary = "邮箱登录（密码方式）",
+            description = "使用邮箱和密码进行登录，成功后返回JWT令牌"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "登录成功，返回JWT令牌",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = TokenResponse.class)
+                    )),
+            @ApiResponse(responseCode = "401", description = "认证失败",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            schema = @Schema(type = "string", example = "Invalid email or password")
+                    )),
+    })
+    public ResponseEntity<?> loginByEmailWithPassword(@RequestBody EmailLoginPasswordRequest loginRequest, HttpServletRequest request) {
+        try {
+            if (loginRequest == null || loginRequest.getEmail() == null || loginRequest.getEmail().isBlank()
+                    || loginRequest.getPassword() == null || loginRequest.getPassword().isBlank()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email and password are required");
+            }
+
+            // 通过邮箱查找用户
+            LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(User::getEmail, loginRequest.getEmail());
+            User user = userMapper.selectOne(queryWrapper);
+
+            if (user == null) {
+                log.info("[{}]邮箱登录失败，邮箱未绑定任何用户！", loginRequest.getEmail());
+                return ResponseEntity.status(401).body("Invalid email or password");
+            }
+
+            authenticationService.checkUserStatus(user.getUserName());
+
+            // 验证密码
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(user.getUserName(), loginRequest.getPassword())
+            );
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            String userUuid = user.getId();
+
+            // 生成 accessToken 和 refreshToken
+            String accessToken = jwtUtil.generateAccessTokenByUuid(userUuid, authentication.getAuthorities());
+            String refreshToken = jwtUtil.generateRefreshTokenByUuid(userUuid, authentication.getAuthorities());
+
+            // 把双token存入redis
+            tokenStorageService.storeAccessToken(accessToken, userUuid);
+            tokenStorageService.storeRefreshToken(refreshToken, userUuid);
+
+            log.info("[{}]邮箱登录成功！UUID: {}", loginRequest.getEmail(), userUuid);
+
+            TokenResponse token = new TokenResponse();
+            token.setAccessToken(accessToken);
+            token.setRefreshToken(refreshToken);
+
+            return ResponseEntity.ok(token);
+        } catch (BadCredentialsException e) {
+            log.info("[{}]邮箱登录失败，密码错误！", loginRequest.getEmail());
+            errorLogService.insertErrorLog(request, e, "邮箱登录密码错误: " + loginRequest.getEmail());
+            return ResponseEntity.status(401).body("Invalid email or password");
+        } catch (Exception e) {
+            log.info("[{}]邮箱登录失败，发生异常：{}", loginRequest.getEmail(), e.getMessage());
+            errorLogService.insertErrorLog(request, e, "邮箱登录错误: " + loginRequest.getEmail());
+            return ResponseEntity.status(401).body("Login failed: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/login/email/code")
+    @Operation(
+            summary = "邮箱登录（验证码方式）",
+            description = "使用邮箱和验证码进行登录，成功后返回JWT令牌"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "登录成功，返回JWT令牌",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = TokenResponse.class)
+                    )),
+            @ApiResponse(responseCode = "401", description = "认证失败",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            schema = @Schema(type = "string", example = "Invalid email or verification code")
+                    )),
+    })
+    public ResponseEntity<?> loginByEmailWithCode(@RequestBody EmailLoginCodeRequest loginRequest, HttpServletRequest request) {
+        try {
+            if (loginRequest == null || loginRequest.getEmail() == null || loginRequest.getEmail().isBlank()
+                    || loginRequest.getCode() == null || loginRequest.getCode().isBlank()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email and verification code are required");
+            }
+
+            // 验证验证码
+            try {
+                verificationService.verifyCode(loginRequest.getEmail(), loginRequest.getCode());
+            } catch (Exception e) {
+                log.info("[{}]邮箱登录失败，验证码验证失败：{}", loginRequest.getEmail(), e.getMessage());
+                return ResponseEntity.status(401).body("Invalid verification code: " + e.getMessage());
+            }
+
+            // 通过邮箱查找用户
+            LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(User::getEmail, loginRequest.getEmail());
+            User user = userMapper.selectOne(queryWrapper);
+
+            if (user == null) {
+                log.info("[{}]邮箱登录失败，邮箱未绑定任何用户！", loginRequest.getEmail());
+                return ResponseEntity.status(401).body("Email not bound to any user");
+            }
+
+            authenticationService.checkUserStatus(user.getUserName());
+
+            // 获取用户权限
+            List<GrantedAuthority> authorities = authenticationService.getUserAuthorities(user.getUserName());
+
+            SecurityContextHolder.getContext().setAuthentication(
+                    new UsernamePasswordAuthenticationToken(user.getUserName(), null, authorities)
+            );
+
+            String userUuid = user.getId();
+
+            // 生成 accessToken 和 refreshToken
+            String accessToken = jwtUtil.generateAccessTokenByUuid(userUuid, authorities);
+            String refreshToken = jwtUtil.generateRefreshTokenByUuid(userUuid, authorities);
+
+            // 把双token存入redis
+            tokenStorageService.storeAccessToken(accessToken, userUuid);
+            tokenStorageService.storeRefreshToken(refreshToken, userUuid);
+
+            log.info("[{}]邮箱验证码登录成功！UUID: {}", loginRequest.getEmail(), userUuid);
+
+            TokenResponse token = new TokenResponse();
+            token.setAccessToken(accessToken);
+            token.setRefreshToken(refreshToken);
+
+            return ResponseEntity.ok(token);
+        } catch (Exception e) {
+            log.info("[{}]邮箱验证码登录失败，发生异常：{}", loginRequest.getEmail(), e.getMessage());
+            errorLogService.insertErrorLog(request, e, "邮箱验证码登录错误: " + loginRequest.getEmail());
+            return ResponseEntity.status(401).body("Login failed: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/refresh")
     @Operation(
             summary = "刷新访问令牌",
@@ -366,6 +512,173 @@ public class AuthenticationController {
         }
     }
 
+    // ==================== 邮箱绑定相关接口 ====================
+
+    @GetMapping("/email")
+    @Operation(
+            summary = "获取当前用户绑定的邮箱",
+            description = "返回当前登录用户绑定的邮箱地址（部分隐藏保护隐私）"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "获取成功",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = EmailInfoResponse.class))),
+            @ApiResponse(responseCode = "401", description = "未登录或登录已过期")
+    })
+    public ResponseEntity<?> getBoundEmail() {
+        String userUuid = JwtUtil.getCurrentUuid();
+        if (userUuid == null || userUuid.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not logged in");
+        }
+
+        User user = userMapper.selectById(userUuid);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        }
+
+        EmailInfoResponse response = new EmailInfoResponse();
+        String email = user.getEmail();
+        if (email != null && !email.isBlank()) {
+            response.setEmail(maskEmail(email));
+            response.setBound(true);
+        } else {
+            response.setEmail(null);
+            response.setBound(false);
+        }
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/email/bind")
+    @Operation(
+            summary = "绑定邮箱",
+            description = "为当前登录用户绑定邮箱，需要验证码和密码验证"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "绑定成功",
+                    content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Email bound successfully"))),
+            @ApiResponse(responseCode = "400", description = "绑定失败",
+                    content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Email already bound to another user"))),
+            @ApiResponse(responseCode = "401", description = "密码错误或验证码错误")
+    })
+    public ResponseEntity<?> bindEmail(@RequestBody BindEmailRequest request, HttpServletRequest httpRequest) {
+        if (request == null || request.getEmail() == null || request.getEmail().isBlank()
+                || request.getCode() == null || request.getCode().isBlank()
+                || request.getPassword() == null || request.getPassword().isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email, code and password are required");
+        }
+
+        String userUuid = JwtUtil.getCurrentUuid();
+        if (userUuid == null || userUuid.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not logged in");
+        }
+
+        User user = userMapper.selectById(userUuid);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        }
+
+        // 验证密码
+        if (!authenticationService.verifyPassword(user.getUserName(), request.getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid password");
+        }
+
+        // 验证验证码
+        try {
+            verificationService.verifyCode(request.getEmail(), request.getCode());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid verification code: " + e.getMessage());
+        }
+
+        // 检查邮箱是否已被其他用户绑定
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getEmail, request.getEmail());
+        User existingUser = userMapper.selectOne(queryWrapper);
+        if (existingUser != null && !existingUser.getId().equals(userUuid)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email already bound to another user");
+        }
+
+        // 绑定邮箱
+        user.setEmail(request.getEmail());
+        userMapper.updateById(user);
+
+        log.info("用户[{}]绑定邮箱[{}]成功", user.getUserName(), request.getEmail());
+        return ResponseEntity.ok("Email bound successfully");
+    }
+
+    @PostMapping("/email/unbind")
+    @Operation(
+            summary = "解绑邮箱",
+            description = "解除当前登录用户绑定的邮箱，需要验证码和密码验证"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "解绑成功",
+                    content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Email unbound successfully"))),
+            @ApiResponse(responseCode = "400", description = "解绑失败",
+                    content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "No email bound"))),
+            @ApiResponse(responseCode = "401", description = "密码错误或验证码错误")
+    })
+    public ResponseEntity<?> unbindEmail(@RequestBody UnbindEmailRequest request, HttpServletRequest httpRequest) {
+        if (request == null || request.getCode() == null || request.getCode().isBlank()
+                || request.getPassword() == null || request.getPassword().isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Code and password are required");
+        }
+
+        String userUuid = JwtUtil.getCurrentUuid();
+        if (userUuid == null || userUuid.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not logged in");
+        }
+
+        User user = userMapper.selectById(userUuid);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        }
+
+        // 检查是否已绑定邮箱
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No email bound");
+        }
+
+        // 验证密码
+        if (!authenticationService.verifyPassword(user.getUserName(), request.getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid password");
+        }
+
+        // 验证验证码（发送到当前绑定的邮箱）
+        try {
+            verificationService.verifyCode(user.getEmail(), request.getCode());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid verification code: " + e.getMessage());
+        }
+
+        // 解绑邮箱
+        String oldEmail = user.getEmail();
+        user.setEmail(null);
+        userMapper.updateById(user);
+
+        log.info("用户[{}]解绑邮箱[{}]成功", user.getUserName(), oldEmail);
+        return ResponseEntity.ok("Email unbound successfully");
+    }
+
+    /**
+     * 隐藏邮箱中间部分保护隐私
+     * 例如：example@qq.com -> ex***@qq.com
+     */
+    private String maskEmail(String email) {
+        if (email == null || email.isBlank() || !email.contains("@")) {
+            return email;
+        }
+        String[] parts = email.split("@");
+        String localPart = parts[0];
+        String domain = parts[1];
+
+        if (localPart.length() <= 2) {
+            return localPart.charAt(0) + "***@" + domain;
+        }
+
+        return localPart.charAt(0) + "***" + localPart.charAt(localPart.length() - 1) + "@" + domain;
+    }
+
 
 }
 
@@ -418,6 +731,48 @@ class ResetPasswordRequest {
 class ForgotUsernameRequest {
     @Schema(description = "邮箱地址", example = "programcx@qq.com")
     private String emailAddr;
+    @Schema(description = "验证码", example = "123456")
+    private String code;
+}
+
+@Data
+class EmailInfoResponse {
+    @Schema(description = "邮箱地址（部分隐藏）", example = "ex***@qq.com")
+    private String email;
+    @Schema(description = "是否已绑定邮箱", example = "true")
+    private boolean bound;
+}
+
+@Data
+class BindEmailRequest {
+    @Schema(description = "要绑定的邮箱地址", example = "newemail@qq.com")
+    private String email;
+    @Schema(description = "验证码", example = "123456")
+    private String code;
+    @Schema(description = "当前用户密码", example = "password123")
+    private String password;
+}
+
+@Data
+class UnbindEmailRequest {
+    @Schema(description = "验证码", example = "123456")
+    private String code;
+    @Schema(description = "当前用户密码", example = "password123")
+    private String password;
+}
+
+@Data
+class EmailLoginPasswordRequest {
+    @Schema(description = "邮箱地址", example = "user@example.com")
+    private String email;
+    @Schema(description = "密码", example = "password123")
+    private String password;
+}
+
+@Data
+class EmailLoginCodeRequest {
+    @Schema(description = "邮箱地址", example = "user@example.com")
+    private String email;
     @Schema(description = "验证码", example = "123456")
     private String code;
 }

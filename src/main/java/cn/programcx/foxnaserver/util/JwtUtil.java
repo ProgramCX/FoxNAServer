@@ -75,7 +75,7 @@ public class JwtUtil {
 
 
     // 解析用户名
-    public String getUsername(String token) {
+    public String getUuid(String token) {
         return Jwts.parser()
                 .setSigningKey(jwtProperties.getSecret())
                 .parseClaimsJws(token)
