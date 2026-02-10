@@ -60,12 +60,7 @@ public class FileDirInfoController {
 
         List<FileInfo> list = new ArrayList<>();
         for (File file : files) {
-            FileInfo info = new FileInfo();
-            info.setName(file.getName());
-            info.setPath(file.getPath().replace(File.separatorChar, '/'));
-            info.setSize(file.length());
-            info.setLastModified(file.lastModified());
-            info.setType(file.isDirectory() ? "directory" : "file");
+            FileInfo info = FileInfo.of(file);
             list.add(info);
         }
 

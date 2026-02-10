@@ -132,7 +132,7 @@ public class FileDirOperationController {
     })
     @CheckFilePermission(type = "Read", paramFields = {"path"})
     @GetMapping("get")
-    public ResponseEntity<?> get(@RequestHeader(required = false,value = "Range") String Range,@RequestParam("path") String path, HttpServletRequest request) throws IOException {
+    public ResponseEntity<?> get(@RequestHeader(required = false,value = "Range") String Range,@RequestParam("path") String path,@RequestParam(value = "inline",required = false) boolean isInline, HttpServletRequest request) throws IOException {
         File file = new File(path);
         if (!file.exists()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -171,7 +171,11 @@ public class FileDirOperationController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         headers.setContentLength(contentLength);
-        headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(file.getName(), "UTF-8").replaceAll("\\+", "%20") + "\"");
+        if(isInline){
+            headers.set(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + URLEncoder.encode(file.getName(), "UTF-8").replaceAll("\\+", "%20") + "\"");
+        }else {
+            headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(file.getName(), "UTF-8").replaceAll("\\+", "%20") + "\"");
+        }
         headers.set(HttpHeaders.ACCEPT_RANGES, "bytes");
         headers.set(HttpHeaders.CONTENT_RANGE, "bytes " + start + "-" + end + "/" + fileLength);
 
