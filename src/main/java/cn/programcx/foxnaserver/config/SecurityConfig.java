@@ -171,6 +171,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/file/media/**").permitAll()
                         .requestMatchers("/api/file/**").hasAuthority("FILE")
                         .requestMatchers("/api/stream/**").hasAuthority("STREAM")
+                        .requestMatchers("/api/transcode/**").hasAuthority("TRANSCODE MANAGEMENT")
                         .requestMatchers("/api/ddns/**").hasAuthority("DDNS")
                         .requestMatchers("/api/mail/**").hasAuthority("EMAIL")
                         .requestMatchers("/api/user/**").hasAuthority("USER")

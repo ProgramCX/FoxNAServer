@@ -3,7 +3,9 @@ package cn.programcx.foxnaserver.service.media;
 import cn.programcx.foxnaserver.config.TranscodeRabbitMQConfig;
 import cn.programcx.foxnaserver.dto.media.FFmpegProcessManager;
 import cn.programcx.foxnaserver.dto.media.JobStatus;
+import cn.programcx.foxnaserver.dto.media.SubtitleTranscodeTask;
 import cn.programcx.foxnaserver.dto.media.TranscodeTask;
+import cn.programcx.foxnaserver.mapper.TranscodeJobMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -36,9 +38,9 @@ public class HLSTranscodeService {
     private final String tempDir = System.getProperty("java.io.tmpdir") +
             File.separator + "foxnas" +
             File.separator + "transcode";
-    private final RabbitTemplate rabbitTemplate;
 
     private final RedisTemplate<String, Object> redisTemplate;
+    private final TranscodeJobMapper transcodeJobMapper;
 
     /**
      * 主方法：阻塞式转码流程
@@ -67,12 +69,12 @@ public class HLSTranscodeService {
                 log.info("音频提取完成：{}", audio);
             }
 
+            // 不提取字幕，需单独调用接口提取
             Path subtitle = null;
             if (transcodeTask.getSubtitleTrackIndex() >= 0) {
-                subtitle = extractSubtitle(transcodeTask, secondsTimeout, outputPath);
+                subtitle = extractSubtitle(transcodeTask);
                 log.info("字幕提取完成：{}", subtitle);
             }
-
 
             createHLS(transcodeTask, secondsTimeout, audio, outputPath, totalMills);
             log.info("DASH封装完成，输出目录：{}", outputPath);
@@ -92,7 +94,10 @@ public class HLSTranscodeService {
      * 提取字幕（转换为VTT格式）
      * 注意：当前实现直接提取，未做格式转换（假设输入为文本字幕）
      */
-    private Path extractSubtitle(TranscodeTask transcodeTask, int secondsTimeout, Path output) throws Exception {
+    public Path extractSubtitle(TranscodeTask transcodeTask) throws Exception {
+        String workId = transcodeTask.getJobId();
+        Path output = Path.of(tempDir, workId);
+
         String fileName = String.format("subtitle_%d.vtt", transcodeTask.getSubtitleTrackIndex());
         Path outFile = output.resolve(fileName);
 
@@ -103,7 +108,38 @@ public class HLSTranscodeService {
                 outFile.toString()
         );
 
-        processManager.execute(cmd, secondsTimeout, 0,null);
+        processManager.execute(cmd, workId, 10 * 60, 0, null);
+        return outFile;
+    }
+
+    /**
+     * 提取字幕为VTT格式（供字幕转码任务使用）
+     * 支持将各种字幕格式转换为WebVTT格式
+     *
+     * @param task 字幕转码任务
+     * @return VTT文件路径
+     */
+    public Path extractSubtitleToVtt(SubtitleTranscodeTask task) throws Exception {
+        Path outFile = Path.of(task.getOutputPath());
+
+        // 确保输出目录存在
+        Files.createDirectories(outFile.getParent());
+
+        List<String> cmd = Arrays.asList(
+                "ffmpeg", "-y",
+                "-i", task.getVideoPath(),
+                "-map", "0:s:" + task.getSubtitleTrackIndex(),
+                "-c:s", "webvtt",  // 强制转换为WebVTT格式
+                outFile.toString()
+        );
+
+        processManager.execute(cmd, task.getJobId(), 10 * 60, 0, null);
+
+        // 验证文件是否存在
+        if (!Files.exists(outFile)) {
+            throw new RuntimeException("字幕提取失败，输出文件不存在");
+        }
+
         return outFile;
     }
 
@@ -112,12 +148,15 @@ public class HLSTranscodeService {
         Path tmpFile = output.resolve(fileName + ".tmp");
         Path finalFile = output.resolve(fileName);
 
-        JobStatus status = (JobStatus) redisTemplate.opsForValue().get("job:" + transcodeTask.getJobId());
+        JobStatus statusTmp = (JobStatus) redisTemplate.opsForValue().get("job:" + transcodeTask.getJobId());
 
-        if (status != null) {
-            status.setStages(2);
-            status.setCurrentStage(1);
+        if (statusTmp == null) {
+            statusTmp = new JobStatus();
+            statusTmp.setState(JobStatus.State.PROCESSING);
         }
+        statusTmp.setStages(2);
+        statusTmp.setCurrentStage(1);
+        final JobStatus status = statusTmp;
 
         try {
             Files.deleteIfExists(tmpFile);
@@ -138,12 +177,10 @@ public class HLSTranscodeService {
                     tmpFile.toString()
             );
 
-            processManager.execute(cmd, secondsTimeout, totalMills, (total, current, progress) -> {
-                if (status != null) {
-                    status.setProgress(progress);
-                    redisTemplate.opsForValue().set("job:" + transcodeTask.getJobId(), status);
-                    log.info("音频提取进度：{}/{}（{}%）", current, total, progress);
-                }
+            processManager.execute(cmd, transcodeTask.getJobId(), secondsTimeout, totalMills, (total, current, progress) -> {
+                status.setProgress(progress);
+                redisTemplate.opsForValue().set("job:" + transcodeTask.getJobId(), status);
+                log.info("音频提取进度：{}/{}\uff08{}%\uff09", current, total, progress);
             });
 
             if (!Files.exists(tmpFile) || Files.size(tmpFile) < 1024) {
@@ -170,7 +207,13 @@ public class HLSTranscodeService {
                            Path audioPath, Path output, long totalMills) throws Exception {
         String m3u8Output = output.resolve("playlist.m3u8").toString();
 
-        JobStatus status = (JobStatus) redisTemplate.opsForValue().get("job:" + transcodeTask.getJobId());
+        JobStatus statusTmp = (JobStatus) redisTemplate.opsForValue().get("job:" + transcodeTask.getJobId());
+
+        if (statusTmp == null) {
+            statusTmp = new JobStatus();
+            statusTmp.setState(JobStatus.State.PROCESSING);
+        }
+        final JobStatus status = statusTmp;
 
         List<String> cmd = new ArrayList<>();
         cmd.addAll(Arrays.asList("ffmpeg", "-hide_banner", "-y"));
@@ -195,10 +238,9 @@ public class HLSTranscodeService {
         // 音频处理
         if (audioPath != null) {
             cmd.addAll(Arrays.asList("-map", "1:a:0", "-c:a", "copy"));
-            if (status != null) {
-                status.setStages(2);
-                status.setCurrentStage(2);
-            }
+            status.setStages(2);
+            status.setCurrentStage(2);
+            transcodeJobMapper.updateProgress(transcodeTask.getJobId(), 0.0, 2);
         } else {
             cmd.addAll(Arrays.asList(
                     "-map", "0:a:" + transcodeTask.getAudioTrackIndex(),
@@ -206,10 +248,9 @@ public class HLSTranscodeService {
                     "-b:a", "192k",
                     "-ac", "2"        // 强制立体声
             ));
-            if (status != null) {
-                status.setStages(1);
-                status.setCurrentStage(1);
-            }
+            status.setStages(1);
+            status.setCurrentStage(1);
+            transcodeJobMapper.updateProgress(transcodeTask.getJobId(), 0.0, 1);
         }
 
         // HLS 分片参数
@@ -224,12 +265,10 @@ public class HLSTranscodeService {
                 m3u8Output
         ));
 
-        processManager.execute(cmd, secondsTimeout, totalMills, (total, current, progress) -> {
-            if (status != null) {
-                status.setProgress(progress);
-                redisTemplate.opsForValue().set("job:" + transcodeTask.getJobId(), status);
-                log.info("HLS 转码进度：{}/{}（{}%）", current, total, progress);
-            }
+        processManager.execute(cmd, transcodeTask.getJobId(), secondsTimeout, totalMills, (total, current, progress) -> {
+            status.setProgress(progress);
+            redisTemplate.opsForValue().set("job:" + transcodeTask.getJobId(), status);
+            log.info("HLS 转码进度：{}/{}\uff08{}%\uff09", current, total, progress);
         });
     }
 

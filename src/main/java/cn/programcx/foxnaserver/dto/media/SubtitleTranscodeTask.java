@@ -7,35 +7,28 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
+/**
+ * 字幕转码任务 DTO
+ * 用于将字幕轨道转换为 VTT 格式
+ */
 @Builder
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TranscodeTask implements Serializable {
-    // 转码任务 ID
+public class SubtitleTranscodeTask implements Serializable {
+    
+    // 任务 ID
     private String jobId;
 
     // 视频文件路径
     private String videoPath;
 
-    // 音频轨索引
-    private int audioTrackIndex;
-
     // 字幕轨索引
     private int subtitleTrackIndex;
 
-    // 输出目录
-    private String outputDir;
-
-    // 是否立即观看
-    private boolean isImmediate;
+    // 输出文件路径
+    private String outputPath;
 
     // 重试次数
     private int retryCount;
-
-    // 视频文件指纹（用于缓存判断）
-    private String fingerprint;
 }
-
-
-

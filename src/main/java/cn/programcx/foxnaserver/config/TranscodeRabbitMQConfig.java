@@ -25,6 +25,10 @@ public class TranscodeRabbitMQConfig {
     public static final String QUEUE_DLQ = "transcode.dlq";           // 死信
     public static final String QUEUE_DELAY = "cleanup.delay";         // 延迟清理
     public static final String QUEUE_CLEANUP = "task.cleanup";        // 清理队列
+    public static final String QUEUE_SUBTITLE = "transcode.subtitle"; // 字幕转码队列
+
+    // 路由键
+    public static final String ROUTING_SUBTITLE = "task.subtitle";    // 字幕转码路由键
 
     @Bean
     public DirectExchange transcodeExchange() {
@@ -60,6 +64,16 @@ public class TranscodeRabbitMQConfig {
                 .build();
     }
 
+    // 字幕转码队列
+    @Bean
+    public Queue subtitleQueue() {
+        return QueueBuilder.durable(QUEUE_SUBTITLE)
+                .withArgument("x-dead-letter-exchange", EXCHANGE_DLX)
+                .withArgument("x-dead-letter-routing-key", "task.failed")
+                .withArgument("x-message-ttl", 10 * 60 * 1000) // 10分钟超时
+                .build();
+    }
+
     // 死信队列
     @Bean
     public Queue dlq() {
@@ -90,6 +104,11 @@ public class TranscodeRabbitMQConfig {
     @Bean
     public Binding bindingPriority() {
         return BindingBuilder.bind(priorityQueue()).to(transcodeExchange()).with("task.priority");
+    }
+
+    @Bean
+    public Binding bindingSubtitle() {
+        return BindingBuilder.bind(subtitleQueue()).to(transcodeExchange()).with(ROUTING_SUBTITLE);
     }
 
     @Bean

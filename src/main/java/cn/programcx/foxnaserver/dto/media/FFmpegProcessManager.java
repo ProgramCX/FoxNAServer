@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -40,6 +41,17 @@ public class FFmpegProcessManager {
             }
     );
 
+    public final Map<String, Process> runningProcesses = new ConcurrentHashMap<>();
+
+    public void terminateIfExists(String jobId) {
+        log.info("terminateIfExists jobId={}", jobId);
+        Process process = runningProcesses.remove(jobId);
+        if (process != null) {
+            process.destroyForcibly();
+        }
+
+    }
+
     /**
      * 阻塞式执行FFmpeg命令
      * 调用线程会阻塞直到FFmpeg完成、超时或异常
@@ -48,7 +60,7 @@ public class FFmpegProcessManager {
      * @param timeoutSeconds 最大执行时间（秒）
      * @throws Exception 执行失败、超时或退出码非0时抛出
      */
-    public void execute(List<String> command, long timeoutSeconds, long totalMills, TranscodeCallback callback) throws Exception {
+    public void execute(List<String> command, String jobId, long timeoutSeconds, long totalMills, TranscodeCallback callback) throws Exception {
         // 1. 获取信号量（控制并发数，最多等待30秒）
         if (!semaphore.tryAcquire(30, TimeUnit.SECONDS)) {
             throw new RuntimeException("转码服务器繁忙，当前有 " + semaphore.getQueueLength() + " 个任务排队");
@@ -71,13 +83,16 @@ public class FFmpegProcessManager {
                     // 构建进程
                     ProcessBuilder pb = new ProcessBuilder(command);
                     pb.directory(new File(tempDir));
-                    pb.redirectErrorStream(true); // 合并stderr到stdout
+                    pb.redirectErrorStream(true);
 
                     // 设置环境变量（处理中文路径）
                     setupEnvironment(pb);
 
                     log.info("[FFmpeg] 启动: {}", String.join(" ", command));
                     process = pb.start();
+
+                    // 记录进程到Map
+                    runningProcesses.put(jobId, process);
 
                     // 3. 启动日志读取线程（守护线程，防止阻塞进程缓冲区）
                     final Process p = process;
@@ -93,10 +108,10 @@ public class FFmpegProcessManager {
                     logThread.join(1000);
 
                     // 5. 检查退出码
-//                    if (exitCode != 0) {
-//                        log.error("[FFmpeg] 非正常退出，码: {}", exitCode);
-//                        throw new RuntimeException("FFmpeg 执行失败，退出码: " + exitCode);
-//                    }
+                    if (exitCode != 0) {
+                        log.error("[FFmpeg] 非正常退出，码: {}", exitCode);
+                        throw new RuntimeException("FFmpeg 执行失败，退出码: " + exitCode);
+                    }
 
                     log.info("[FFmpeg] 正常完成");
 
@@ -105,6 +120,8 @@ public class FFmpegProcessManager {
                     log.warn("[FFmpeg] 任务被中断");
                     if (process != null) {
                         process.destroyForcibly();
+                        // 从Map中移除
+                        runningProcesses.remove(jobId);
                         // 等待进程真正结束（最多5秒）
                         try {
                             process.waitFor(5, TimeUnit.SECONDS);
@@ -119,15 +136,21 @@ public class FFmpegProcessManager {
                 } catch (IOException e) {
                     log.error("[FFmpeg] IO错误: {}", e.getMessage());
                     if (process != null) {
+                        // 从Map中移除
+
                         process.destroyForcibly();
+                        runningProcesses.remove(jobId);
                     }
                     throw new RuntimeException("FFmpeg 启动失败: " + e.getMessage(), e);
 
                 } finally {
                     // 6. 确保进程被销毁（如果还在运行）
                     if (process != null && process.isAlive()) {
+                        // 从Map中移除
+
                         log.warn("[FFmpeg] 强制终止残留进程");
                         process.destroyForcibly();
+                        runningProcesses.remove(jobId);
                     }
                 }
             });
@@ -135,7 +158,6 @@ public class FFmpegProcessManager {
             // 7. 阻塞等待任务完成（单点超时控制）
             try {
                 future.get(timeoutSeconds, TimeUnit.SECONDS);
-
             } catch (TimeoutException e) {
                 // 超时取消任务
                 log.error("[FFmpeg] 执行超时（> {} 秒），强制取消", timeoutSeconds);

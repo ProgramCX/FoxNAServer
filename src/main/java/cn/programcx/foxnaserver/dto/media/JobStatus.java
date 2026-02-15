@@ -10,7 +10,8 @@ public class JobStatus {
         PENDING,    // 等待中
         PROCESSING,    // 进行中
         COMPLETED,    // 成功
-        FAILED      // 失败
+        FAILED,      // 失败
+        CANCELLED    // 取消
     }
 
     // 任务状态

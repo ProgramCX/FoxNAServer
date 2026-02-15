@@ -1,41 +1,34 @@
 package cn.programcx.foxnaserver.config;
 
-import jakarta.annotation.PostConstruct;
+import cn.programcx.foxnaserver.service.media.TranscodeJobService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.quartz.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import cn.programcx.foxnaserver.jobs.BroadcastJob;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
-@Slf4j
+/**
+ * 广播初始化器
+ * 系统启动时执行必要的初始化工作
+ */
 @Component
 @RequiredArgsConstructor
-public class BroadcastInitializer {
-    @Autowired
-    private Scheduler scheduler;
-    @PostConstruct
-    public void initJobsOnStartup() {
-        JobDetail jobDetail = JobBuilder.newJob(BroadcastJob.class)
-                .withIdentity("serviceSearchBroadcastJob")
-                .storeDurably()
-                .build();
+@Slf4j
+public class BroadcastInitializer implements ApplicationRunner {
 
-        Trigger trigger = TriggerBuilder.newTrigger()
-                .withIdentity("serviceSearchBroadcastJobTrigger" )
-                .forJob(jobDetail)
-                .withSchedule(SimpleScheduleBuilder.simpleSchedule()
-                        .withIntervalInSeconds(5)
-                        .repeatForever())
-                .build();
+    private final TranscodeJobService transcodeJobService;
 
+    @Override
+    public void run(ApplicationArguments args) {
+        log.info("开始执行系统初始化...");
+        
+        // 恢复进行中的转码任务
         try {
-            scheduler.scheduleJob(jobDetail, trigger);
+            transcodeJobService.recoverRunningJobs();
+        } catch (Exception e) {
+            log.error("恢复转码任务失败: {}", e.getMessage());
         }
-        catch (Exception e){
-            log.error("启动广播发现初始化任务失败: {}", e.getMessage(), e);
-        }
-
+        
+        log.info("系统初始化完成");
     }
 }
-

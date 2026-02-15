@@ -66,6 +66,32 @@ public class Result<D> implements Serializable  {
         return result;
     }
 
+    public static <D> Result<D> success(D data) {
+        Result<D> result = new Result<>();
+        result.success = true;
+        result.data = data;
+        result.code = 200;
+        result.message = "success";
+        return result;
+    }
+
+    public static <D> Result<D> success(D data, String message) {
+        Result<D> result = new Result<>();
+        result.success = true;
+        result.data = data;
+        result.code = 200;
+        result.message = message;
+        return result;
+    }
+
+    public static <D> Result<D> error(int code, String message) {
+        Result<D> result = new Result<>();
+        result.success = false;
+        result.code = code;
+        result.message = message;
+        return result;
+    }
+
 
     public static <D> Result<D> notFound(String message) {
         Result<D> result = new Result<>();

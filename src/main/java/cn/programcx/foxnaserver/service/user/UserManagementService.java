@@ -38,7 +38,7 @@ public class UserManagementService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    private final List<String> permissionList = List.of("SSH", "USER", "EMAIL", "STREAM", "FILE", "DDNS");
+    private final List<String> permissionList = List.of("SSH", "USER", "EMAIL", "STREAM", "FILE", "DDNS", "LOG", "TRANSCODE MANAGEMENT");
     private final List<Map<String, String>> permissionDescriptions = List.of(
             Map.of("name", "SSH", "description", "允许使用SSH服务"),
             Map.of("name", "USER", "description", "允许管理用户"),
@@ -46,7 +46,8 @@ public class UserManagementService {
             Map.of("name", "STREAM", "description", "允许使用流媒体服务"),
             Map.of("name", "FILE", "description", "允许使用文件服务"),
             Map.of("name", "DDNS", "description", "允许使用动态域名服务"),
-            Map.of("name", "LOG", "description", "允许管理日志")
+            Map.of("name", "LOG", "description", "允许管理日志"),
+            Map.of("name", "TRANSCODE MANAGEMENT", "description", "允许管理转码任务")
     );
 
     public void addUser(User user, List<Permission> permissionList, List<Resource> resourceList) throws Exception {
