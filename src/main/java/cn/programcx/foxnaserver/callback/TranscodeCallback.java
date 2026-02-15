@@ -1,4 +1,7 @@
 package cn.programcx.foxnaserver.callback;
 
-public class TranscodeCallback {
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+public interface TranscodeCallback {
+    void onStatusCallback(long totalMills, long currentMills, double percent) throws JsonProcessingException;
 }
