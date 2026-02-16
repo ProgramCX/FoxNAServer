@@ -107,8 +107,12 @@ public class HLSTranscodeService {
                 "-map", "0:s:" + transcodeTask.getSubtitleTrackIndex(),
                 outFile.toString()
         );
-
-        processManager.execute(cmd, workId, 10 * 60, 0, null);
+        try {
+            processManager.execute(cmd, workId, 10 * 60, 0, null);
+        }catch (Exception e){
+            log.error("字幕提取任务 [{}] 失败：{}", workId, e.getMessage());
+            return null;
+        }
         return outFile;
     }
 
@@ -132,6 +136,7 @@ public class HLSTranscodeService {
                 "-c:s", "webvtt",  // 强制转换为WebVTT格式
                 outFile.toString()
         );
+
 
         processManager.execute(cmd, task.getJobId(), 10 * 60, 0, null);
 

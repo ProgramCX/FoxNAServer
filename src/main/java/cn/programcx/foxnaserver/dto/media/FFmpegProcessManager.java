@@ -104,8 +104,8 @@ public class FFmpegProcessManager {
                     // 注意：这里不设置超时，由外层的 future.get 控制总超时时间
                     int exitCode = process.waitFor();
 
-                    // 等待日志线程读取完毕（给1秒缓冲时间）
-                    logThread.join(1000);
+                    // 等待日志线程读取完毕（给5秒缓冲时间）
+                    logThread.join(5000);
 
                     // 5. 检查退出码
                     if (exitCode != 0) {
@@ -113,7 +113,7 @@ public class FFmpegProcessManager {
                         throw new RuntimeException("FFmpeg 执行失败，退出码: " + exitCode);
                     }
 
-                    log.info("[FFmpeg] 正常完成");
+                    log.info("[FFmpeg] 完成");
 
                 } catch (InterruptedException e) {
                     // 线程被中断（通常是超时取消或外部中断）
@@ -214,7 +214,7 @@ public class FFmpegProcessManager {
                 if (line.length() > 1000) {
                     line = line.substring(0, 1000) + "... [截断]";
                 }
-                log.debug("[FFmpeg] {}", line);
+                log.info("[FFmpeg] {}", line);
 
                 if (line.startsWith("out_time_ms=")) {
                     // 注意：这个值实际是微秒，需要除以1000
@@ -232,7 +232,7 @@ public class FFmpegProcessManager {
                 }
                 else if (line.equals("progress=end")) {
                     callback.onStatusCallback(totalMills, currentTimeMs, 100);
-                    break;
+//                    break;
                 }
             }
         } catch (IOException e) {

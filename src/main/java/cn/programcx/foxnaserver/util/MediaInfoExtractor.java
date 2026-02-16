@@ -31,27 +31,27 @@ public class MediaInfoExtractor {
             // 遍历轨道
             List<MediaInfoDTO.TrackDTO> tracks = new ArrayList<>();
             int nbStreams = fmtCtx.nb_streams();
+            int audioIndex = 0;
+            int videoIndex = 0;
+            int subtitleIndex = 0;
+            int othersIndex = 0;
             for (int i = 0; i < nbStreams; i++) {
                 AVStream stream = fmtCtx.streams(i);
                 MediaInfoDTO.TrackDTO track = new MediaInfoDTO.TrackDTO();
                 track.setIndex(i);
 
-                int audioIndex = 0;
-                int videoIndex = 0;
-                int assIndex = 0;
-                int othersIndex = 0;
                 switch (stream.codecpar().codec_type()) {
                     case AVMEDIA_TYPE_VIDEO -> {
                         track.setType("video");
-                        track.setIndex(audioIndex++);
+                        track.setIndex(videoIndex++);
                     }
                     case AVMEDIA_TYPE_AUDIO -> {
                         track.setType("audio");
-                        track.setIndex(videoIndex++);
+                        track.setIndex(audioIndex++);
                     }
                     case AVMEDIA_TYPE_SUBTITLE -> {
-                        track.setType("ass");
-                        track.setIndex(assIndex++);
+                        track.setType("subtitle");
+                        track.setIndex(subtitleIndex++);
                     }
                     default -> {
                         track.setType("others");

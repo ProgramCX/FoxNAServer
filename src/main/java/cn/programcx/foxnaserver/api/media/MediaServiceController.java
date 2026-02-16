@@ -15,7 +15,7 @@ import cn.programcx.foxnaserver.service.media.RangeMediaService;
 import cn.programcx.foxnaserver.service.media.TranscodeJobService;
 import cn.programcx.foxnaserver.service.media.VideoFingerprintService;
 import cn.programcx.foxnaserver.util.JwtUtil;
-import com.nimbusds.jose.util.BoundedInputStream;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -236,7 +236,7 @@ public class MediaServiceController {
             
             if (existingJobId != null) {
                 log.info("指纹 [{}] 已存在，复用转码任务 [{}]", fingerprint, existingJobId);
-                return ResponseEntity.ok(new FingerprintCheckResponse(true, existingJobId, fingerprint, 
+                return ResponseEntity.ok(new FingerprintCheckResponse(true, existingJobId, fingerprint,
                     "/api/file/media/stream/" + existingJobId + "/playlist.m3u8"));
             }
             
@@ -282,26 +282,28 @@ public class MediaServiceController {
         // 先检查数据库中是否有已完成的任务
         TranscodeJob completedJob = transcodeJobService.findCompletedByFingerprint(fingerprint);
         if (completedJob != null && completedJob.getCreatorId().equals(userId)) {
-            log.info("用户 [{}] 提交任务时发现指纹 [{}] 已存在已完成任务 [{}]，复用", 
-                userId, fingerprint, completedJob.getJobId());
-            return ResponseEntity.ok(Map.of(
-                "jobId", completedJob.getJobId(),
-                "fingerprint", fingerprint,
-                "reused", "true",
-                "hlsPath", completedJob.getHlsPath() != null ? completedJob.getHlsPath() : "/api/file/media/stream/" + completedJob.getJobId() + "/playlist.m3u8"
-            ));
+//            log.info("用户 [{}] 提交任务时发现指纹 [{}] 已存在已完成任务 [{}]，复用",
+//                userId, fingerprint, completedJob.getJobId());
+//            return ResponseEntity.ok(Map.of(
+//                "jobId", completedJob.getJobId(),
+//                "fingerprint", fingerprint,
+//                "reused", "true",
+//                "hlsPath", completedJob.getHlsPath() != null ? completedJob.getHlsPath() : "/api/file/media/stream/" + completedJob.getJobId() + "/playlist.m3u8"
+//            ));
+            transcodeJobService.deleteJob(completedJob.getJobId(), userId);
         }
         
         // 检查Redis中是否有已完成的转码（双重检查）
         String existingJobId = fingerprintService.getExistingJobId(fingerprint);
         if (existingJobId != null) {
-            log.info("任务提交时发现指纹 [{}] 已存在，复用任务 [{}]", fingerprint, existingJobId);
-            return ResponseEntity.ok(Map.of(
-                "jobId", existingJobId,
-                "fingerprint", fingerprint,
-                "reused", "true",
-                "hlsPath", "/api/file/media/stream/" + existingJobId + "/playlist.m3u8"
-            ));
+//            log.info("任务提交时发现指纹 [{}] 已存在，复用任务 [{}]", fingerprint, existingJobId);
+//            return ResponseEntity.ok(Map.of(
+//                "jobId", existingJobId,
+//                "fingerprint", fingerprint,
+//                "reused", "true",
+//                "hlsPath", "/api/file/media/stream/" + existingJobId + "/playlist.m3u8"
+//            ));
+            transcodeJobService.deleteJob(existingJobId, userId);
         }
 
         // 使用 TranscodeJobService 创建任务（包含数据库记录和消息发送）
@@ -313,9 +315,7 @@ public class MediaServiceController {
             req.isImmediate(),
             fingerprint
         );
-        
-        // 如果返回的任务与当前请求的任务不同（可能是复用了进行中的任务）
-        // 需要检查是否是复用的情况
+
         boolean isReused = !job.getJobId().equals(req.getFingerprint()) && 
                           (TranscodeJob.Status.COMPLETED.name().equals(job.getStatus()) ||
                            TranscodeJob.Status.PENDING.name().equals(job.getStatus()) ||
@@ -328,6 +328,8 @@ public class MediaServiceController {
             "status", job.getStatus()
         ));
     }
+
+
     
     /**
      * 获取当前用户ID (UUID string)
@@ -350,6 +352,7 @@ public class MediaServiceController {
         JobStatus status = (JobStatus) redisTemplate.opsForValue().get("job:" + jobId);
         return status != null ? ResponseEntity.ok(status) : ResponseEntity.notFound().build();
     }
+
 
     // 获取HLS文件
     @GetMapping("/stream/{jobId}/playlist.m3u8")
@@ -391,15 +394,20 @@ public class MediaServiceController {
                     Long.parseLong(parts[1]) : fileSize - 1;
 
             long length = end - start + 1;
-            InputStream is = Files.newInputStream(file);
-            is.skip(start);
+
+            // 使用 FileChannel 精确读取指定范围的字节，避免 BoundedInputStream 的大小限制
+            byte[] data = new byte[(int) length];
+            try (var raf = new java.io.RandomAccessFile(file.toFile(), "r")) {
+                raf.seek(start);
+                raf.readFully(data);
+            }
 
             return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
                     .header("Content-Type", "video/mp2t")
                     .header("Content-Length", String.valueOf(length))
                     .header("Content-Range", "bytes " + start + "-" + end + "/" + fileSize)
                     .header("Accept-Ranges", "bytes")
-                    .body(new InputStreamResource(new BoundedInputStream(is, length)));
+                    .body(new InputStreamResource(new java.io.ByteArrayInputStream(data)));
         }
 
         return ResponseEntity.ok()

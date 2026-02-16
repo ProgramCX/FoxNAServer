@@ -103,7 +103,7 @@ public class FileInfo {
             Map.entry("htm", "text/html"),
             Map.entry("css", "text/css"),
             Map.entry("js", "application/javascript"),
-            // 代码（ts 是 TypeScript，不是视频 transport stream）
+            // 代码
             Map.entry("ts", "application/typescript"),
             Map.entry("java", "text/x-java-source"),
             Map.entry("py", "text/x-python"),
