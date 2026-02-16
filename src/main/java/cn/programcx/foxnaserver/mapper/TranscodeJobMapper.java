@@ -17,6 +17,9 @@ import java.util.List;
 @Repository
 public interface TranscodeJobMapper extends BaseMapper<TranscodeJob> {
 
+    @Select("SELECT * FROM transcode_jobs")
+    List<TranscodeJob> selectAllJob();
+
     /**
      * 根据jobId查询任务
      */

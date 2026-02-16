@@ -21,14 +21,14 @@
     <select id="selectRecentMetrics" resultMap="SysMainMetricsMap">
         <if test="groupSeconds != null and groupSeconds &gt; 0">
             select
-               UUID() as sm_id,
+                FLOOR(UNIX_TIMESTAMP(sm.timestamp) / #{groupSeconds}) as sm_id,
                 AVG(sm.cpu) as cpu,
                 AVG(sm.total_memory) as total_memory,
                 AVG(sm.used_memory) as used_memory,
                 AVG(sm.upload_speed) as upload_speed,
                 AVG(sm.download_speed) as download_speed,
                 MAX(sm.timestamp) as timestamp,
-                sd.id as disk_id,
+                CONCAT(FLOOR(UNIX_TIMESTAMP(MIN(sm.timestamp)) / #{groupSeconds}), '_', sd.disk_name) as disk_id,
                 sd.disk_name,
                 AVG(sd.used_space) as used_space,
                 AVG(sd.total_space) as total_space
@@ -37,7 +37,7 @@
             left join sys_disk_metrics sd
                 on sd.main_id = sm.id
             WHERE sm.timestamp BETWEEN #{startTime} AND #{endTime}
-            GROUP BY FLOOR(UNIX_TIMESTAMP(sm.timestamp) / #{groupSeconds}), sd.id
+            GROUP BY FLOOR(UNIX_TIMESTAMP(sm.timestamp) / #{groupSeconds}), sd.disk_name
             ORDER BY MAX(sm.timestamp) ASC
         </if>
         <if test="groupSeconds == null or groupSeconds == 0">

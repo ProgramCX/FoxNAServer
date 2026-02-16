@@ -6,7 +6,6 @@ import cn.programcx.foxnaserver.dto.media.JobStatus;
 import cn.programcx.foxnaserver.dto.media.MediaInfoDTO;
 import cn.programcx.foxnaserver.dto.media.SubtitleJobStatus;
 import cn.programcx.foxnaserver.dto.media.SubtitleTranscodeTask;
-import cn.programcx.foxnaserver.dto.media.TranscodeTask;
 import cn.programcx.foxnaserver.entity.TranscodeJob;
 import cn.programcx.foxnaserver.mapper.ResourceMapper;
 import cn.programcx.foxnaserver.service.media.DecodeMediaService;
@@ -32,7 +31,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -46,7 +44,8 @@ import java.util.concurrent.TimeUnit;
 @Tag(name = "MediaServiceController", description = "提供流媒体相关的接口")
 public class MediaServiceController {
 
-    private final String tempDir = System.getProperty("java.io.tmpdir") +
+    private final String tempDir = System.getProperty("user.dir") +
+            File.separator + "temp" +
             File.separator + "foxnas" +
             File.separator + "transcode";
 
@@ -313,7 +312,7 @@ public class MediaServiceController {
             req.getAudioTrackIndex(),
             req.getSubtitleTrackIndex(),
             req.isImmediate(),
-            fingerprint
+            fingerprint, req.getExpireSecs()
         );
 
         boolean isReused = !job.getJobId().equals(req.getFingerprint()) && 
@@ -568,6 +567,7 @@ class TranscodeRequest {
     private int subtitleTrackIndex = -1;
     private boolean immediate = false; // true=立即观看（高优先级）
     private String fingerprint; // 可选，如果前端已计算指纹可直接传入
+    private Long expireSecs = 86400L; // 缓存过期时间，默认24小时
 }
 
 @Data

@@ -39,7 +39,8 @@ public class TranscodeJobService {
     private final RabbitTemplate rabbitTemplate;
     private final RedisTemplate<String, Object> redisTemplate;
 
-    private final String tempDir = System.getProperty("java.io.tmpdir") +
+    private final String tempDir = System.getProperty("user.dir") +
+            File.separator + "temp" +
             File.separator + "foxnas" +
             File.separator + "transcode";
     private final FFmpegProcessManager fFmpegProcessManager;
@@ -61,7 +62,7 @@ public class TranscodeJobService {
     @Transactional
     public TranscodeJob createVideoJob(String creatorId, String videoPath, 
                                        Integer audioTrackIndex, Integer subtitleTrackIndex,
-                                       boolean immediate, String fingerprint) {
+                                       boolean immediate, String fingerprint, Long expireSecs) {
         // 如果没有提供指纹，生成一个
         if (fingerprint == null || fingerprint.isEmpty()) {
             fingerprint = fingerprintService.generateFingerprint(videoPath);
@@ -416,7 +417,7 @@ public class TranscodeJobService {
     /**
      * 清理任务相关文件
      */
-    private void cleanupJobFiles(TranscodeJob job) {
+    public void cleanupJobFiles(TranscodeJob job) {
         if (job.getOutputPath() != null) {
             try {
                 Path outputPath = Path.of(job.getOutputPath());

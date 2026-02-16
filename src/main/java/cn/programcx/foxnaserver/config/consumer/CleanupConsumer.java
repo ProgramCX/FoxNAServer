@@ -1,13 +1,13 @@
-package cn.programcx.foxnaserver.config.oauth;
+package cn.programcx.foxnaserver.config.consumer;
 
 import cn.programcx.foxnaserver.dto.media.CleanupTask;
+import cn.programcx.foxnaserver.service.media.TranscodeJobService;
 import cn.programcx.foxnaserver.service.media.VideoFingerprintService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,6 +20,7 @@ import java.util.Comparator;
 public class CleanupConsumer {
 
     private final VideoFingerprintService fingerprintService;
+    private final TranscodeJobService transcodeJobService;
 
     @RabbitListener(queues = "task.cleanup") // 延迟队列到期后路由到这里
     public void onCleanup(CleanupTask task) throws IOException {

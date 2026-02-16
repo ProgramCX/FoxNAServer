@@ -1,4 +1,4 @@
-package cn.programcx.foxnaserver.config.oauth;
+package cn.programcx.foxnaserver.config.consumer;
 
 import cn.programcx.foxnaserver.config.TranscodeRabbitMQConfig;
 import cn.programcx.foxnaserver.dto.media.SubtitleJobStatus;
@@ -13,6 +13,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,7 +33,8 @@ public class SubtitleTranscodeConsumer {
     private final RedisTemplate<String, Object> redisTemplate;
     private final RabbitTemplate rabbitTemplate;
 
-    private static final String TEMP_DIR = System.getProperty("java.io.tmpdir") +
+    private static final String TEMP_DIR = System.getProperty("user.dir") +
+            File.separator + "temp" +
             java.io.File.separator + "foxnas" +
             java.io.File.separator + "transcode";
 

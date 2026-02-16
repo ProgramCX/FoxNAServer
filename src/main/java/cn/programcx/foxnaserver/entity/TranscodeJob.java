@@ -130,6 +130,12 @@ public class TranscodeJob {
     private LocalDateTime completedAt;
 
     /**
+     * 清理时间，单位秒，默认24小时
+     */
+    @TableField("expire_secs")
+    private Long expireSecs = 86400L; // 缓存过期时间，默认24小时
+
+    /**
      * 任务状态枚举
      */
     public enum Status {

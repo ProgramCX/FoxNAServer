@@ -29,6 +29,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 @Slf4j
 @Component
@@ -89,7 +90,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
                                         HttpServletResponse response,
-                                        Authentication authentication) throws IOException, ServletException {
+                                        Authentication authentication) throws IOException {
 
         OAuth2AuthenticationToken auth = (OAuth2AuthenticationToken) authentication;
         String registrationId = auth.getAuthorizedClientRegistrationId();
@@ -189,15 +190,15 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     }
 
     private OAuthUserInfo extractGithubUserInfo(OAuth2User oAuth2User) {
-        String oauthId = oAuth2User.getAttribute("id").toString();
-        String username = oAuth2User.getAttribute("login").toString();
+        String oauthId = Objects.requireNonNull(oAuth2User.getAttribute("id")).toString();
+        String username = Objects.requireNonNull(oAuth2User.getAttribute("login")).toString();
         String email = getStringAttribute(oAuth2User, "email");
         return new OAuthUserInfo(oauthId, username, email);
     }
 
     private OAuthUserInfo extractQqUserInfo(OAuth2User oAuth2User) {
-        String oauthId = oAuth2User.getAttribute("openid").toString();
-        String username = oAuth2User.getAttribute("nickname").toString();
+        String oauthId = Objects.requireNonNull(oAuth2User.getAttribute("openid")).toString();
+        String username = Objects.requireNonNull(oAuth2User.getAttribute("nickname")).toString();
         String email = getStringAttribute(oAuth2User, "email");
         return new OAuthUserInfo(oauthId, username, email);
     }
@@ -286,7 +287,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     private void handleRegisterNewUser(HttpServletResponse response,
                                        String registrationId,
                                        OAuthUserInfo userInfo,
-                                       UserOAuth userOAuth) throws IOException {
+                                       UserOAuth userOAuth) {
         // 防止用户名冲突
         String baseUsername = userOAuthService.generateUsernameByOAuthProvider(registrationId, userInfo.username());
         String databaseUsername = generateUniqueUsername(baseUsername);
@@ -307,7 +308,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             String ticket = userOAuthService.generateActivateTicket();
             userOAuthService.saveTicketByProviderOAuthId(registrationId, userInfo.oauthId(), ticket);
             authenticationService.iniPermissionForNewUser(user);
-            response.sendRedirect(String.format("%s/oauth/activate?ticket=%s", frontendBaseUrl, ticket));
+            response.sendRedirect(String.format("%s/consumer/activate?ticket=%s", frontendBaseUrl, ticket));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -344,13 +345,13 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                                          String oauthId,
                                          User user) throws IOException {
         if ("disabled".equals(user.getState())) {
-            response.sendRedirect(String.format("%s/oauth/error?message=%s",
+            response.sendRedirect(String.format("%s/consumer/error?message=%s",
                     frontendBaseUrl, URLEncoder.encode("该用户已经被禁止登录！", StandardCharsets.UTF_8)));
         } else if ("pending".equals(user.getState())) {
             try {
                 String ticket = userOAuthService.generateActivateTicket();
                 userOAuthService.saveTicketByProviderOAuthId(registrationId, oauthId, ticket);
-                response.sendRedirect(String.format("%s/oauth/activate?ticket=%s", frontendBaseUrl, ticket));
+                response.sendRedirect(String.format("%s/consumer/activate?ticket=%s", frontendBaseUrl, ticket));
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
@@ -374,7 +375,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         log.info("[{}]用户登录成功！UUID: {}", displayUsername, user.getId());
 
         String redirectUrl = String.format(
-                "%s/oauth/success?accessToken=%s&refreshToken=%s&username=%s&uuid=%s",
+                "%s/consumer/success?accessToken=%s&refreshToken=%s&username=%s&uuid=%s",
                 frontendBaseUrl, accessToken, refreshToken, user.getUserName(), user.getId());
 
         response.sendRedirect(redirectUrl);

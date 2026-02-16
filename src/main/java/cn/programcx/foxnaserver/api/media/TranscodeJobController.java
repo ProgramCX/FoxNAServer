@@ -74,7 +74,7 @@ public class TranscodeJobController {
                 request.getAudioTrackIndex(),
                 request.getSubtitleTrackIndex(),
                 request.isImmediate(),
-                fingerprint
+                fingerprint, request.getExpireSecs()
             );
             
             return Result.success(job);
@@ -337,6 +337,7 @@ public class TranscodeJobController {
         private Integer subtitleTrackIndex = -1;
         private boolean immediate = false;
         private String fingerprint; // 可选
+        private Long expireSecs = 86400L; // 缓存过期时间，默认24小时
     }
 
     @Data

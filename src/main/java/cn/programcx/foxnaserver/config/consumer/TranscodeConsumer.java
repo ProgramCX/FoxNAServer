@@ -1,4 +1,4 @@
-package cn.programcx.foxnaserver.config.oauth;
+package cn.programcx.foxnaserver.config.consumer;
 
 import cn.programcx.foxnaserver.config.TranscodeRabbitMQConfig;
 import cn.programcx.foxnaserver.dto.media.CleanupTask;

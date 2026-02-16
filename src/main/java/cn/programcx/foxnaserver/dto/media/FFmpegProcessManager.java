@@ -18,7 +18,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public class FFmpegProcessManager {
 
-    private final String tempDir = System.getProperty("java.io.tmpdir") +
+    private final String tempDir = System.getProperty("user.dir") +
+            File.separator + "temp" +
             File.separator + "foxnas" +
             File.separator + "transcode";
 
