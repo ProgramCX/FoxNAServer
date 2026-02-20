@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class OAuthBindStateServiceImpl implements OAuthBindStateService {
 
-    private static final String REDIS_KEY_PREFIX = "consumer:bind:state:";
+    private static final String REDIS_KEY_PREFIX = "oauth:bind:state:";
     private static final long DEFAULT_EXPIRE_SECONDS = 600; // 默认 10 分钟过期
 
     @Autowired

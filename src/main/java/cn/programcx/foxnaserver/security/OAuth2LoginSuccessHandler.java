@@ -308,7 +308,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             String ticket = userOAuthService.generateActivateTicket();
             userOAuthService.saveTicketByProviderOAuthId(registrationId, userInfo.oauthId(), ticket);
             authenticationService.iniPermissionForNewUser(user);
-            response.sendRedirect(String.format("%s/consumer/activate?ticket=%s", frontendBaseUrl, ticket));
+            response.sendRedirect(String.format("%s/oauth/activate?ticket=%s", frontendBaseUrl, ticket));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -345,13 +345,13 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                                          String oauthId,
                                          User user) throws IOException {
         if ("disabled".equals(user.getState())) {
-            response.sendRedirect(String.format("%s/consumer/error?message=%s",
+            response.sendRedirect(String.format("%s/oauth/error?message=%s",
                     frontendBaseUrl, URLEncoder.encode("该用户已经被禁止登录！", StandardCharsets.UTF_8)));
         } else if ("pending".equals(user.getState())) {
             try {
                 String ticket = userOAuthService.generateActivateTicket();
                 userOAuthService.saveTicketByProviderOAuthId(registrationId, oauthId, ticket);
-                response.sendRedirect(String.format("%s/consumer/activate?ticket=%s", frontendBaseUrl, ticket));
+                response.sendRedirect(String.format("%s/oauth/activate?ticket=%s", frontendBaseUrl, ticket));
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
@@ -375,7 +375,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         log.info("[{}]用户登录成功！UUID: {}", displayUsername, user.getId());
 
         String redirectUrl = String.format(
-                "%s/consumer/success?accessToken=%s&refreshToken=%s&username=%s&uuid=%s",
+                "%s/oauth/success?accessToken=%s&refreshToken=%s&username=%s&uuid=%s",
                 frontendBaseUrl, accessToken, refreshToken, user.getUserName(), user.getId());
 
         response.sendRedirect(redirectUrl);

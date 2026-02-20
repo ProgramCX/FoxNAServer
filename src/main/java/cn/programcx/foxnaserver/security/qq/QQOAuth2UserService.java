@@ -85,7 +85,7 @@ public class QQOAuth2UserService implements OAuth2UserService<OAuth2UserRequest,
 
     /**
      * 获取 QQ 用户信息
-     * 接口: https://graph.qq.com/user/get_user_info?access_token=xxx&oauth_consumer_key=xxx&openid=xxx
+     * 接口: https://graph.qq.com/user/get_user_info?access_token=xxx&oauth_oauth_key=xxx&openid=xxx
      */
     private Map<String, Object> getUserInfo(String accessToken, String openid, OAuth2UserRequest userRequest) {
         String appId = userRequest.getClientRegistration().getClientId();
@@ -93,7 +93,7 @@ public class QQOAuth2UserService implements OAuth2UserService<OAuth2UserRequest,
         String url = UriComponentsBuilder
                 .fromHttpUrl("https://graph.qq.com/user/get_user_info")
                 .queryParam("access_token", accessToken)
-                .queryParam("oauth_consumer_key", appId)
+                .queryParam("oauth_oauth_key", appId)
                 .queryParam("openid", openid)
                 .toUriString();
 

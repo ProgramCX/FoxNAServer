@@ -24,7 +24,7 @@ permissions:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: foxnaserver-runner
 
     steps:
     - uses: actions/checkout@v4
