@@ -50,6 +50,9 @@ public class VerificationServiceImpl implements VerificationService {
         String key = "VERIFICATION_CODE_" + to;
         String codeKey = "VERIFICATION_CODE_COLD_" + to;
         String storedCode = redisTemplate.opsForValue().get(key);
+        logger.info("开始验证验证码，邮箱: {}, 输入验证码: {}", to, code);
+        logger.info("存储的验证码: {}, key: {}", storedCode, key);
+
         if (storedCode == null) {
             logger.warn("验证码已过期或不存在，邮箱: {}", to);
             throw new Exception("验证码已过期或不存在");

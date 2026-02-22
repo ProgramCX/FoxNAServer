@@ -24,6 +24,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
@@ -427,17 +428,17 @@ public class AuthenticationController {
             authenticationService.checkUserStatus(user.getUserName());
 
             // 获取用户权限
-            List<GrantedAuthority> authorities = authenticationService.getUserAuthorities(user.getUserName());
+            UserDetails userDetails = authenticationService.getUserAuthorities(user.getUserName());
 
             SecurityContextHolder.getContext().setAuthentication(
-                    new UsernamePasswordAuthenticationToken(user.getUserName(), null, authorities)
+                    new UsernamePasswordAuthenticationToken(user.getUserName(), null, userDetails.getAuthorities())
             );
 
             String userUuid = user.getId();
 
             // 生成 accessToken 和 refreshToken
-            String accessToken = jwtUtil.generateAccessTokenByUuid(userUuid, authorities);
-            String refreshToken = jwtUtil.generateRefreshTokenByUuid(userUuid, authorities);
+            String accessToken = jwtUtil.generateAccessTokenByUuid(userUuid, userDetails.getAuthorities());
+            String refreshToken = jwtUtil.generateRefreshTokenByUuid(userUuid, userDetails.getAuthorities());
 
             // 把双token存入redis
             tokenStorageService.storeAccessToken(accessToken, userUuid);
@@ -678,7 +679,6 @@ public class AuthenticationController {
 
         return localPart.charAt(0) + "***" + localPart.charAt(localPart.length() - 1) + "@" + domain;
     }
-
 
 }
 

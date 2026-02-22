@@ -8,6 +8,8 @@ import cn.programcx.foxnaserver.util.MailSenderUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +36,9 @@ public class AuthenticationService {
     private MailSenderUtil mailSenderUtil;
     @Autowired
     private SpringTemplateEngine springTemplateEngine;
+
+    @Autowired
+    private UserDetailsService userDetailsService;
 
     public boolean registerAdmin() {
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
@@ -178,23 +183,25 @@ public class AuthenticationService {
     /**
      * 获取用户权限列表
      * @param username 用户名
-     * @return 用户权限列表
+     * @return 用户详情
      */
-    public List<GrantedAuthority> getUserAuthorities(String username) {
-        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(User::getUserName, username);
-        User user = userMapper.selectOne(queryWrapper);
-        
-        if (user == null) {
-            return List.of();
-        }
-        
-        List<Permission> permissions = permissionMapper.selectList(
-                new LambdaQueryWrapper<Permission>().eq(Permission::getOwnerUuid, user.getId())
-        );
-        
-        return permissions.stream()
-                .map(p -> (GrantedAuthority) () -> "ROLE_" + p.getAreaName().toUpperCase())
-                .collect(Collectors.toList());
+    public UserDetails getUserAuthorities(String username) {
+//        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+//        queryWrapper.eq(User::getUserName, username);
+//        User user = userMapper.selectOne(queryWrapper);
+//
+//        if (user == null) {
+//            return List.of();
+//        }
+//
+//        List<Permission> permissions = permissionMapper.selectList(
+//                new LambdaQueryWrapper<Permission>().eq(Permission::getOwnerUuid, user.getId())
+//        );
+//
+//        return permissions.stream()
+//                .map(p -> (GrantedAuthority) () -> "ROLE_" + p.getAreaName().toUpperCase())
+//                .collect(Collectors.toList());
+
+        return userDetailsService.loadUserByUsername(username);
     }
 }
