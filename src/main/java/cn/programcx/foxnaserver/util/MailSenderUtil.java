@@ -18,6 +18,9 @@ public class MailSenderUtil {
     @Value("${spring.mail.username}")
     private String mailUsername;
 
+    @Value("${spring.mail.from}")
+    private String mailFrom;
+
     @Autowired
     private JavaMailSender mailSender;
 
@@ -30,7 +33,8 @@ public class MailSenderUtil {
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(content, true);  // false 表示发送纯文本，true 表示发送 HTML
-            helper.setFrom(mailUsername);
+            String from = mailFrom.isEmpty() ? mailUsername : mailFrom;
+            helper.setFrom(from);
             
             mailSender.send(message);
             logger.info("邮件发送成功: 收件人={}, 主题={}", to, subject);
