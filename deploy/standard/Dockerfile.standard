@@ -32,7 +32,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN mkdir -p /opt/foxnas /opt/foxnas/config /data/files /data/redis /var/log/foxnas
 
-COPY --from=backend-builder /build/backend/target/FoxNAServer-0.0.1-SNAPSHOT.jar /opt/foxnas/app.jar
+COPY --from=backend-builder /build/backend/target/*.jar /opt/foxnas/app.jar
 COPY --from=frontend-builder /build/web/dist /usr/share/nginx/html
 
 COPY FoxNAServer/deploy/standard/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf

@@ -32,7 +32,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN mkdir -p /opt/foxnas /opt/foxnas/config /data/files /data/redis /var/log/foxnas
 
-COPY --from=backend-builder /build/backend/target/FoxNAServer-0.0.1-SNAPSHOT.jar /opt/foxnas/app.jar
+COPY --from=backend-builder /build/backend/target/*.jar /opt/foxnas/app.jar
 COPY --from=frontend-builder /build/web/dist /usr/share/nginx/html
 
 COPY FoxNAServer/deploy/all-in-one/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
@@ -43,6 +43,6 @@ COPY FoxNAServer/deploy/all-in-one/scripts/start-foxnas.sh /opt/foxnas/start-fox
 
 RUN chmod +x /opt/foxnas/entrypoint.sh /opt/foxnas/start-foxnas.sh
 
-EXPOSE 80 8848 3306 6379 5672 15672
+EXPOSE 80 8080 3306 6379 5672 15672
 
 ENTRYPOINT ["/opt/foxnas/entrypoint.sh"]

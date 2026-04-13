@@ -2,13 +2,13 @@
 # FoxNAS All-in-One 默认配置
 # ========================
 
-app.server.port=8848
-app.broadcast.port=25522
+app.server.port=${APP_SERVER_PORT}
+app.broadcast.port=${BROADCAST_PORT}
 
 # MySQL
-app.spring.datasource.url=jdbc:mysql://127.0.0.1:3306/${MYSQL_DATABASE}?useSSL=false&serverTimezone=GMT%2B8
-app.spring.datasource.username=${MYSQL_USER}
-app.spring.datasource.password=${MYSQL_PASSWORD}
+app.spring.datasource.url=${SPRING_DATASOURCE_URL}
+app.spring.datasource.username=${SPRING_DATASOURCE_USERNAME}
+app.spring.datasource.password=${SPRING_DATASOURCE_PASSWORD}
 
 # Redis
 app.spring.data.redis.host=127.0.0.1
@@ -16,9 +16,9 @@ app.spring.data.redis.port=6379
 app.spring.data.redis.password=
 
 # MongoDB（可选，不启用可保留默认）
-app.spring.data.mongodb.host=127.0.0.1
-app.spring.data.mongodb.port=27017
-app.spring.data.mongodb.database=foxnas_logs
+app.spring.data.mongodb.host=${MONGODB_HOST}
+app.spring.data.mongodb.port=${MONGODB_PORT}
+app.spring.data.mongodb.database=${MONGODB_DATABASE}
 
 # RabbitMQ
 app.spring.rabbitmq.host=127.0.0.1
@@ -28,23 +28,42 @@ app.spring.rabbitmq.password=guest
 
 # JWT
 app.jwt.secret=${JWT_SECRET}
+app.jwt.expiration=${JWT_EXPIRATION}
+
+# Mail
+app.spring.mail.host=${APP_SPRING_MAIL_HOST}
+app.spring.mail.port=${APP_SPRING_MAIL_PORT}
+app.spring.mail.from=${APP_SPRING_MAIL_FROM}
+app.spring.mail.username=${APP_SPRING_MAIL_USERNAME}
+app.spring.mail.password=${APP_SPRING_MAIL_PASSWORD}
+app.spring.mail.default-encoding=${APP_SPRING_MAIL_DEFAULT_ENCODING}
+app.spring.mail.properties.mail.smtp.auth=${APP_SPRING_MAIL_SMTP_AUTH}
+app.spring.mail.properties.mail.smtp.starttls.enable=${APP_SPRING_MAIL_SMTP_STARTTLS_ENABLE}
+app.spring.mail.properties.mail.smtp.starttls.required=${APP_SPRING_MAIL_SMTP_STARTTLS_REQUIRED}
+app.spring.mail.properties.mail.smtp.socketFactory.class=${APP_SPRING_MAIL_SMTP_SOCKET_FACTORY_CLASS}
+app.spring.mail.properties.mail.smtp.socketFactory.port=${APP_SPRING_MAIL_SMTP_SOCKET_FACTORY_PORT}
+app.spring.mail.properties.mail.smtp.connectiontimeout=${APP_SPRING_MAIL_SMTP_CONNECTION_TIMEOUT}
+app.spring.mail.properties.mail.smtp.timeout=${APP_SPRING_MAIL_SMTP_TIMEOUT}
+app.spring.mail.properties.mail.smtp.writetimeout=${APP_SPRING_MAIL_SMTP_WRITE_TIMEOUT}
+app.spring.mail.properties.mail.smtp.socketFactory.fallback=${APP_SPRING_MAIL_SMTP_SOCKET_FACTORY_FALLBACK}
 
 # 文件上传大小
-app.spring.servlet.multipart.max-file-size=10240MB
-app.spring.servlet.multipart.max-request-size=10240MB
+app.spring.servlet.multipart.max-file-size=${APP_MULTIPART_MAX_FILE_SIZE}
+app.spring.servlet.multipart.max-request-size=${APP_MULTIPART_MAX_REQUEST_SIZE}
 
 # 日志
 app.logging.file.name=/var/log/foxnas/foxnas_log.log
-app.logging.logback.rollingpolicy.max-file-size=10MB
-app.logging.logback.rollingpolicy.max-history=30
+app.logging.logback.rollingpolicy.max-file-size=${APP_LOG_MAX_FILE_SIZE}
+app.logging.logback.rollingpolicy.max-history=${APP_LOG_MAX_HISTORY}
 
 # OAuth 回调地址（用户按需修改，支持 HTTPS）
 oauth.base.url=${OAUTH_BASE_URL}
 oauth.frontend.base.url=${OAUTH_FRONTEND_BASE_URL}
 
 # QQ / GitHub / Microsoft OAuth 密钥默认留空
-spring.security.oauth2.client.registration.github.client-id=
-spring.security.oauth2.client.registration.github.client-secret=
-spring.security.oauth2.client.registration.qq.client-secret=
-microsoft.client.id=
-microsoft.client.secret=
+spring.security.oauth2.client.registration.github.client-id=${GITHUB_CLIENT_ID}
+spring.security.oauth2.client.registration.github.client-secret=${GITHUB_CLIENT_SECRET}
+spring.security.oauth2.client.registration.qq.client-id=${QQ_CLIENT_ID}
+spring.security.oauth2.client.registration.qq.client-secret=${QQ_CLIENT_SECRET}
+microsoft.client.id=${MICROSOFT_CLIENT_ID}
+microsoft.client.secret=${MICROSOFT_CLIENT_SECRET}
