@@ -91,6 +91,7 @@ public class StatusService {
             info.put("cpu", getCPUUsage());
             info.put("memory", getMemoryInfo());
             info.put("disk", getDiskInfo());
+            info.put("sysLoad", getSysLoad());
             info.put("network", getNetworkInfo());
         } catch (Exception e) {
            log.error("获取系统资源信息失败:{}", e.getMessage());
@@ -158,6 +159,11 @@ public class StatusService {
             list.add(map);
         }
         return list;
+    }
+
+    public double getSysLoad() {
+        double[] loadAverage = cpu.getSystemLoadAverage(1);
+        return loadAverage[0];
     }
 
 }

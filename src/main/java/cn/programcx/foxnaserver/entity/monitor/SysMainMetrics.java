@@ -18,6 +18,7 @@ public class SysMainMetrics{
     private Long usedMemory;
     private Long uploadSpeed;
     private Long downloadSpeed;
+    private double sysLoad;
     private Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 
     private List<SysDiskMetrics> diskMetricsList;

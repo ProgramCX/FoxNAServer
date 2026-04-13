@@ -1,0 +1,26 @@
+services:
+  foxnas-allinone:
+    build:
+      context: ../../..
+      dockerfile: FoxNAServer/deploy/all-in-one/Dockerfile.allinone
+    image: foxnas/allinone:latest
+    container_name: foxnas-allinone
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_DATABASE: db_foxnas
+      MYSQL_USER: foxnas
+      MYSQL_PASSWORD: foxnas
+      MYSQL_ROOT_PASSWORD: root123456
+      JWT_SECRET: foxnas-default-change-me
+      OAUTH_BASE_URL: http://localhost
+      OAUTH_FRONTEND_BASE_URL: http://localhost
+    volumes:
+      - ./data/files:/data/files
+      - ./data/mysql:/var/lib/mysql
+      - ./data/redis:/data/redis
+      - ./data/rabbitmq:/var/lib/rabbitmq
+      - ./config:/opt/foxnas/config
+      - ./logs:/var/log/foxnas

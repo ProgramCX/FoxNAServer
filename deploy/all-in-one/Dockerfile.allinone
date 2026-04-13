@@ -1,0 +1,48 @@
+FROM maven:3.9.11-eclipse-temurin-21 AS backend-builder
+WORKDIR /build/backend
+COPY FoxNAServer/pom.xml ./pom.xml
+COPY FoxNAServer/src ./src
+RUN mvn -B -DskipTests clean package
+
+FROM node:20-alpine AS frontend-builder
+WORKDIR /build/web
+COPY FoxNAS-Web/package*.json ./
+RUN npm ci
+COPY FoxNAS-Web/ ./
+RUN npm run build
+
+FROM ubuntu:24.04
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openjdk-21-jre-headless \
+    nginx \
+    supervisor \
+    mysql-server \
+    mysql-client \
+    redis-server \
+    rabbitmq-server \
+    curl \
+    netcat-openbsd \
+    gettext-base \
+    openssl \
+    tzdata \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /opt/foxnas /opt/foxnas/config /data/files /data/redis /var/log/foxnas
+
+COPY --from=backend-builder /build/backend/target/FoxNAServer-0.0.1-SNAPSHOT.jar /opt/foxnas/app.jar
+COPY --from=frontend-builder /build/web/dist /usr/share/nginx/html
+
+COPY FoxNAServer/deploy/all-in-one/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY FoxNAServer/deploy/all-in-one/nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY FoxNAServer/deploy/all-in-one/config/config.properties.template /opt/foxnas/config/config.properties.template
+COPY FoxNAServer/deploy/all-in-one/scripts/entrypoint.sh /opt/foxnas/entrypoint.sh
+COPY FoxNAServer/deploy/all-in-one/scripts/start-foxnas.sh /opt/foxnas/start-foxnas.sh
+
+RUN chmod +x /opt/foxnas/entrypoint.sh /opt/foxnas/start-foxnas.sh
+
+EXPOSE 80 8848 3306 6379 5672 15672
+
+ENTRYPOINT ["/opt/foxnas/entrypoint.sh"]

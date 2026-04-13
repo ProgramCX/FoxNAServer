@@ -5,7 +5,9 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.quartz.QuartzJobBean;
+import org.springframework.stereotype.Component;
 
 
 import java.io.FileInputStream;
@@ -17,10 +19,28 @@ import java.util.Enumeration;
 import java.util.Properties;
 
 @Slf4j
+@Component
 public class BroadcastJob extends QuartzJobBean {
+
+    /**
+     * Spring 定时任务入口，默认每 5 秒广播一次，可通过 app.broadcast.interval-ms 覆盖。
+     */
+    @Scheduled(fixedDelayString = "${app.broadcast.interval-ms:5000}")
+    public void runBroadcastTask() {
+        try {
+            executeBroadcast();
+        } catch (Exception e) {
+            log.error("广播任务执行失败", e);
+        }
+    }
+
     @SneakyThrows
     @Override
     protected void executeInternal(JobExecutionContext context) throws JobExecutionException {
+        executeBroadcast();
+    }
+
+    private void executeBroadcast() throws Exception {
         //读取发送广播的端口号
         Properties props = new Properties();
 
@@ -31,16 +51,18 @@ public class BroadcastJob extends QuartzJobBean {
             int bindPort = props.getProperty("broadcast.port")==null || props.getProperty("broadcast.port").isEmpty() ? 25522 : Integer.parseInt(props.getProperty("broadcast.port"));
             int port = props.getProperty("server.port")==null || props.getProperty("server.port").isEmpty() ? 8845 : Integer.parseInt(props.getProperty("server.port"));
             //发送广播消息
-            DatagramSocket socket = new DatagramSocket();
-            socket.setBroadcast(true);
+            String configuredName = props.getProperty("name", "FoxNAS");
+            final String serverName = configuredName.isEmpty() ? "FoxNAS" : configuredName;
+            List<String> broadcastAddresses = getBroadcastAddresses();
 
+            try (DatagramSocket socket = new DatagramSocket()) {
+                socket.setBroadcast(true);
 
-            getBroadcastAddresses().forEach(addr -> {
-                try {
+                for (String addr : broadcastAddresses) {
                     InetAddress address = InetAddress.getByName(addr);
 
                     Map<String,Object> jsonMap = new HashMap<>();
-                    jsonMap.put("name", props.getProperty("name").isEmpty() ? "FoxNAS" : props.getProperty("name"));
+                    jsonMap.put("name", serverName);
                     jsonMap.put("port", port);
                     jsonMap.put("ip", addr);
 
@@ -51,11 +73,9 @@ public class BroadcastJob extends QuartzJobBean {
                     DatagramPacket packet = new DatagramPacket(buf, buf.length, address, bindPort);
 
                     socket.send(packet);
-//                    log.info("发送广播消息到 {}:{}", addr, bindPort);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    log.debug("发送广播消息到 {}:{}", addr, bindPort);
                 }
-            });
+            }
 
         }
     }

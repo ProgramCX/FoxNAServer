@@ -10,6 +10,7 @@
         <result property="uploadSpeed" column="upload_speed" />
         <result property="downloadSpeed" column="download_speed" />
         <result property="timestamp" column="timestamp" />
+        <result property="sysLoad" column="sys_load" />
         <collection property="diskMetricsList" ofType="cn.programcx.foxnaserver.entity.monitor.SysDiskMetrics">
             <id property="id" column="disk_id" />
             <result property="diskName" column="disk_name" />
@@ -27,6 +28,7 @@
                 AVG(sm.used_memory) as used_memory,
                 AVG(sm.upload_speed) as upload_speed,
                 AVG(sm.download_speed) as download_speed,
+                AVG(sm.sys_load) as sys_load,
                 MAX(sm.timestamp) as timestamp,
                 CONCAT(FLOOR(UNIX_TIMESTAMP(MIN(sm.timestamp)) / #{groupSeconds}), '_', sd.disk_name) as disk_id,
                 sd.disk_name,
@@ -48,6 +50,7 @@
                 sm.used_memory,
                 sm.upload_speed,
                 sm.download_speed,
+                sm.sys_load,
                 sm.timestamp,
                 sd.id as disk_id,
                 sd.disk_name,

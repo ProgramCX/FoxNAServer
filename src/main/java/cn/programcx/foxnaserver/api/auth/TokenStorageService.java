@@ -50,6 +50,11 @@ public class TokenStorageService {
         stringRedisTemplate.delete(key);
     }
 
+    public void invalidateUserTokens(String uuid) {
+        deleteAccessToken(uuid);
+        deleteRefreshToken(uuid);
+    }
+
     // 根据 token 值删除 AccessToken（用于登出）
     public void deleteAccessTokenByToken(String token) {
         String uuid = jwtUtil.getUuid(token);

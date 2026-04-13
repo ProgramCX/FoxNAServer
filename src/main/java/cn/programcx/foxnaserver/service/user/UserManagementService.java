@@ -1,5 +1,6 @@
 package cn.programcx.foxnaserver.service.user;
 
+import cn.programcx.foxnaserver.api.auth.TokenStorageService;
 import cn.programcx.foxnaserver.dto.user.ResourceDTO;
 import cn.programcx.foxnaserver.entity.Permission;
 import cn.programcx.foxnaserver.entity.Resource;
@@ -37,6 +38,8 @@ public class UserManagementService {
     private ResourceMapper resourceMapper;
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private TokenStorageService tokenStorageService;
 
     private final List<String> permissionList = List.of("SSH", "USER", "EMAIL", "STREAM", "FILE", "DDNS", "LOG", "TRANSCODE MANAGEMENT");
     private final List<Map<String, String>> permissionDescriptions = List.of(
@@ -153,6 +156,7 @@ public class UserManagementService {
         permission.setOwnerUuid(uuid);
         permission.setAreaName(permissionName);
         permissionMapper.insert(permission);
+        tokenStorageService.invalidateUserTokens(uuid);
     }
 
     public void revokePermissionByUuid(String uuid, String permissionName) throws Exception {
@@ -170,6 +174,7 @@ public class UserManagementService {
         if (deleted == 0) {
             throw new Exception("用户不拥有该权限！");
         }
+        tokenStorageService.invalidateUserTokens(uuid);
     }
 
     public void grantResourceByUuid(String uuid, String resourcePath, String type) throws Exception {

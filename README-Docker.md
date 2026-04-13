@@ -7,6 +7,7 @@
 - [快速开始](#快速开始)
 - [环境要求](#环境要求)
 - [部署方式](#部署方式)
+  - [方式零：Standard 单容器发布（推荐交付）](#方式零standard-单容器发布推荐交付)
   - [方式一：开发环境（一键启动）](#方式一开发环境一键启动)
   - [方式二：生产环境（使用外部数据库）](#方式二生产环境使用外部数据库)
 - [配置说明](#配置说明)
@@ -41,6 +42,33 @@ docker-compose up -d
 - 磁盘：至少 10GB 可用空间
 
 ## 部署方式
+
+### 方式零：单容器 All-in-One（前后端 + MySQL + Redis + RabbitMQ + Nginx）
+
+如果你希望用户“拉起一个容器即可运行”，请使用：
+
+- `deploy/all-in-one/README.md`
+
+该方案内置默认配置，开箱可运行，并支持通过环境变量或挂载配置文件修改 `oauth.base.url`、`oauth.frontend.base.url`（含 HTTPS 地址）。
+
+### 方式零：Standard 单容器发布（推荐交付）
+
+如果你希望发布时使用固定目录结构（`deploy/standard`）并让用户“默认无配置可直接启动”，请使用：
+
+- `deploy/standard/README.md`
+
+该方案提供：
+
+- 前后端 + MySQL + Redis + RabbitMQ + Nginx 同容器部署
+- 默认目录映射（含文件管理目录）
+- 首次启动自动生成 `config/config.properties`
+- 通过 `docker-compose.yml` 环境变量或挂载配置自由修改 HTTPS/OAuth 等项
+
+生产环境建议先复制覆盖模板：
+
+```bash
+cp deploy/standard/docker-compose.override.yml.example deploy/standard/docker-compose.override.yml
+```
 
 ### 方式一：开发环境（一键启动）
 

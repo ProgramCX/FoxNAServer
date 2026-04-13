@@ -65,7 +65,13 @@ docker compose up -d --build
 
 ### 4.1 HTTPS / 域名（推荐改环境变量）
 
-编辑 `deploy/standard/docker-compose.yml` 中环境变量：
+推荐使用覆盖文件，避免直接改主文件：
+
+```bash
+cp docker-compose.override.yml.example docker-compose.override.yml
+```
+
+然后编辑 `docker-compose.override.yml` 中环境变量：
 
 ```yaml
 environment:
@@ -81,7 +87,7 @@ docker compose up -d
 
 ### 4.2 数据库与安全密钥（强烈建议修改）
 
-至少修改：
+在 `docker-compose.override.yml` 中至少修改：
 
 - `MYSQL_ROOT_PASSWORD`
 - `MYSQL_PASSWORD`
@@ -133,4 +139,5 @@ docker compose down -v
 - 单容器多进程方案便于交付，不是高可用架构；生产建议逐步拆分。
 - 默认暴露了 MySQL/Redis/RabbitMQ 端口；公网部署务必配合防火墙白名单。
 - RabbitMQ 默认使用 `guest/guest`（仅容器内应用连接）；如需外部连接请自行创建专用用户并调整权限。
+
 

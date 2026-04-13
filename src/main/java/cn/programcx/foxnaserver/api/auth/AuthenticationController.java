@@ -465,9 +465,18 @@ public class AuthenticationController {
     )
     public ResponseEntity<?> refreshToken(@RequestBody Map<String,String> request) {
         String refreshToken = request.get("refreshToken");
-        String userUuid = request.get("uuid");
         if (refreshToken == null || refreshToken.isBlank()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Refresh token is required");
+        }
+
+        String userUuid;
+        try {
+            userUuid = jwtUtil.getUuid(refreshToken);
+            if (userUuid == null || userUuid.isBlank()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token");
         }
 
         String storedRefreshToken = tokenStorageService.getRefreshToken(userUuid);

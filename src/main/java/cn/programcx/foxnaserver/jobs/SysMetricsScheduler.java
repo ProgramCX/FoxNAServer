@@ -32,6 +32,7 @@ public class SysMetricsScheduler {
         final Map<String, Object> memoryInfo = statusService.getMemoryInfo();
         final List<Map<String, Object>> diskInfo = statusService.getDiskInfo();
         final List<Map<String, Object>> networkInfo = statusService.getNetworkInfo();
+        final double sysLoad = statusService.getSysLoad();
 
         Long totalMemory = ((Number) memoryInfo.get("total")).longValue();
         Long usedMemory = ((Number) memoryInfo.get("used")).longValue();
@@ -60,6 +61,7 @@ public class SysMetricsScheduler {
         sysMainMetrics.setUsedMemory(usedMemory);
         sysMainMetrics.setDownloadSpeed(downloadSpeed);
         sysMainMetrics.setUploadSpeed(uploadSpeed);
+        sysMainMetrics.setSysLoad(sysLoad);
 
         return new Pair<>(sysMainMetrics, sysDiskMetricsList);
     }

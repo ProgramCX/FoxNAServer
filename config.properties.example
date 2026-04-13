@@ -7,146 +7,147 @@
 # 3. 重启服务生效
 
 # ============================================
+# 基础服务配置
+# ============================================
+
+# HTTP 服务端口
+server.port=8080
+
+# 广播端口（用于局域网发现等功能）
+broadcast.port=25522
+
+# 服务名称
+name=FoxNas
+
+# Swagger UI 访问路径
+springdoc.swagger-ui.path=/api-docs
+
+# ============================================
 # 数据库配置（必填）
 # ============================================
 
 # MySQL 数据库配置
 # 数据库地址（如果是 Docker 容器，使用容器名或 host.docker.internal）
-spring.datasource.url=jdbc:mysql://localhost:3306/foxnas?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+app.spring.datasource.url=jdbc:mysql://localhost:3306/db_foxnas?useSSL=false&serverTimezone=GMT%2B8
 # 数据库用户名
-spring.datasource.username=foxnas
+app.spring.datasource.username=<your_mysql_username>
 # 数据库密码（生产环境请使用强密码）
-spring.datasource.password=your_mysql_password
+app.spring.datasource.password=<your_mysql_password>
 
 # ============================================
 # Redis 配置（必填）
 # ============================================
 
 # Redis 服务器地址
-spring.data.redis.host=localhost
+app.spring.data.redis.host=127.0.0.1
 # Redis 端口
-spring.data.redis.port=6379
-# Redis 密码（如果没有密码请留空）
-spring.data.redis.password=
-# Redis 数据库索引（0-15）
-spring.data.redis.database=0
-# 连接超时时间（毫秒）
-spring.data.redis.timeout=10000
+app.spring.data.redis.port=6379
 
 # ============================================
 # MongoDB 配置（可选，用于存储日志）
 # ============================================
 
 # MongoDB 服务器地址
-spring.data.mongodb.host=localhost
+app.spring.data.mongodb.host=localhost
 # MongoDB 端口
-spring.data.mongodb.port=27017
+app.spring.data.mongodb.port=27017
 # MongoDB 数据库名
-spring.data.mongodb.database=foxnas_logs
-# MongoDB 用户名（如果没有认证请注释掉）
-# spring.data.mongodb.username=
-# MongoDB 密码（如果没有认证请注释掉）
-# spring.data.mongodb.password=
-# 认证数据库（默认 admin）
-# spring.data.mongodb.authentication-database=admin
+app.spring.data.mongodb.database=foxnas_logs
 
 # ============================================
 # JWT 安全配置（必填，生产环境必须修改）
 # ============================================
 
 # JWT 密钥（用于签名 Token）
-# ⚠️ 重要：生产环境必须修改此值！
-# 建议使用随机生成的长字符串，生成命令：openssl rand -base64 32
-jwt.secret=your-super-secret-key-change-this-in-production
-
-# Token 过期时间（毫秒）
-# 默认值：86400000（24小时）
-jwt.expiration=86400000
+# 建议使用随机生成的长字符串
+app.jwt.secret=<your-super-secret-key-change-this-in-production>
 
 # ============================================
 # 邮件配置（可选，用于找回密码等功能）
 # ============================================
 
-# SMTP 服务器地址
-# QQ邮箱：smtp.qq.com
-# 163邮箱：smtp.163.com
-# Gmail：smtp.gmail.com
-spring.mail.host=smtp.qq.com
+# SMTP 服务器地址（示例：smtp.qq.com / smtp.resend.com）
+app.spring.mail.host=smtp.qq.com
 
 # SMTP 端口
-# QQ邮箱：465（SSL）或 587（TLS）
-spring.mail.port=465
+app.spring.mail.port=465
 
-# 发件人邮箱地址
-spring.mail.username=your_email@qq.com
+# 发件账号
+app.spring.mail.username=<your_email_or_smtp_user>
 
-# 邮箱授权码（不是登录密码）
-# QQ邮箱获取方式：设置 -> 账户 -> 开启 SMTP -> 生成授权码
-spring.mail.password=your_email_auth_code
+# 邮件密码或授权码
+app.spring.mail.password=<your_email_auth_code>
+
+# 发件人显示名
+app.spring.mail.from=FoxNAS <no-reply@example.com>
 
 # 默认编码
-spring.mail.default-encoding=UTF-8
+app.spring.mail.default-encoding=UTF-8
+
+# SMTP 认证与 TLS
+app.spring.mail.properties.mail.smtp.auth=true
+app.spring.mail.properties.mail.smtp.starttls.enable=true
+app.spring.mail.properties.mail.smtp.starttls.required=true
+
+# SSL SocketFactory（如不需要可注释）
+app.spring.mail.properties.mail.smtp.socketFactory.class=javax.net.ssl.SSLSocketFactory
+app.spring.mail.properties.mail.smtp.socketFactory.port=465
+app.spring.mail.properties.mail.smtp.socketFactory.fallback=false
+
+# 连接超时配置（毫秒）
+app.spring.mail.properties.mail.smtp.connectiontimeout=5000
+app.spring.mail.properties.mail.smtp.timeout=5000
+app.spring.mail.properties.mail.smtp.writetimeout=5000
 
 # ============================================
 # 文件上传配置
 # ============================================
 
 # 单个文件最大大小（默认 10GB）
-spring.servlet.multipart.max-file-size=10240MB
+app.spring.servlet.multipart.max-file-size=10240MB
 
 # 单次请求最大大小（默认 10GB）
-spring.servlet.multipart.max-request-size=10240MB
+app.spring.servlet.multipart.max-request-size=10240MB
 
 # ============================================
 # 日志配置
 # ============================================
 
 # 日志文件路径
-logging.file.name=logs/foxnas_log.log
+app.logging.file.name=logs/foxnas_log.log
 
 # 单个日志文件最大大小
-logging.logback.rollingpolicy.max-file-size=10MB
+app.logging.logback.rollingpolicy.max-file-size=10MB
 
 # 日志文件保留天数
-logging.logback.rollingpolicy.max-history=30
+app.logging.logback.rollingpolicy.max-history=30
+
+# 推荐日志级别（按需开启）
+app.logging.level.org.apache.ibatis=warn
+app.logging.level.org.springframework.jdbc=warn
+app.logging.level.com.zaxxer.hikari=warn
 
 # ============================================
-# MyBatis-Plus 配置
+# OAuth2 配置（可选，用于第三方登录），相关解释请在 Wiki 中查看
 # ============================================
 
-# 是否开启 SQL 日志（生产环境建议关闭）
-mybatis-plus.configuration.log-impl=org.apache.ibatis.logging.stdout.StdOutImpl
-
-# ============================================
-# OAuth2 配置（可选，用于第三方登录）
-# ============================================
+# 后端地址（用于 OAuth 回调）
+oauth.base.url=http://localhost:8080
 
 # 前端地址（用于 OAuth 回调跳转）
 oauth.frontend.base.url=http://localhost:5173
 
-# 后端地址（用于 OAuth 回调，不配置则使用默认）
-# oauth.base.url=http://localhost:8080
-
 # GitHub OAuth
 spring.security.oauth2.client.registration.github.client-id=your_github_client_id
 spring.security.oauth2.client.registration.github.client-secret=your_github_client_secret
+spring.security.oauth2.client.registration.github.redirect-uri=${oauth.base.url}/api/login/oauth2/code/{registrationId}
 
-# QQ OAuth
-spring.security.oauth2.client.registration.qq.client-id=your_qq_app_id
+# QQ OAuth（必须是生产环境地址，且 https 加密，并且在 QQ 开发者平台配置）
+#spring.security.oauth2.client.registration.qq.client-id=your_qq_app_id
 spring.security.oauth2.client.registration.qq.client-secret=your_qq_app_key
+spring.security.oauth2.client.registration.qq.redirect-uri=${oauth.base.url}/api/login/oauth2/code/{registrationId}
 
 # Microsoft OAuth（需要同时配置 microsoft.client.id 和 microsoft.client.secret 才会启用）
-# 配置步骤：
-# 1. 在 Azure Portal (https://portal.azure.com) 注册应用
-# 2. 获取应用 ID (client-id) 和 客户端密码 (client-secret)
-# 3. 添加平台：Web，重定向 URI: http://localhost:8080/login/oauth2/code/microsoft
-# 4. 启用访问令牌和 ID 令牌
 microsoft.client.id=your_microsoft_client_id
 microsoft.client.secret=your_microsoft_client_secret
-
-# ============================================
-# 服务器配置
-# ============================================
-
-# 服务端口
-server.port=8080
+spring.security.oauth2.client.registration.microsoft.redirect-uri=${oauth.base.url}/api/login/oauth2/code/{registrationId}

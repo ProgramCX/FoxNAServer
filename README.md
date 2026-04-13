@@ -11,7 +11,7 @@
 
 English | [中文](README-zh.md)
 
-FoxNAS Server is developed based on **JDK 17** and **Spring Boot 2.6.13**, providing essential services such as **scheduled device discovery broadcast**, **real-time media stream decoding**, and **file system management**. It is suitable for scenarios like private servers, embedded devices, and home NAS, and works together with the [FoxNAS Client](https://github.com/ProgramCX/FoxNAS) or [FoxNAS Web](https://github.com/ProgramCX/FoxNAS-Web) to provide an efficient and intelligent NAS solution.
+FoxNAS Server is developed based on **JDK 21** and **Spring Boot 3.0.6**, providing essential services such as **scheduled device discovery broadcast**, **real-time media stream decoding**, and **file system management**. It is suitable for scenarios like private servers, embedded devices, and home NAS, and works together with the [FoxNAS Client](https://github.com/ProgramCX/FoxNAS) or [FoxNAS Web](https://github.com/ProgramCX/FoxNAS-Web) to provide an efficient and intelligent NAS solution.
 
 ## Features
 
@@ -35,14 +35,14 @@ FoxNAS Server is developed based on **JDK 17** and **Spring Boot 2.6.13**, provi
 
 ## Tech Stack
 
-- **JDK Version**: 17  
-- **Backend Framework**: Spring Boot 2.6.13  
+- **JDK Version**: 21  
+- **Backend Framework**: Spring Boot 3.0.6  
 - **Key Components**: Spring Web, Quartz, Spring Security, JavaMail, FFmpeg, MyBatis Plus  
-- **Build Tool**: Maven 3.9.9
+- **Build Tool**: Maven 3.10.1
 
 ## Deployment
 
-The server can be deployed on any device that supports Java 17:
+The server can be deployed on any device that supports Java 21:
 
 - Home NAS servers  
 - Embedded Linux hosts  
