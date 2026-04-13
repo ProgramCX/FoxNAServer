@@ -1,0 +1,17 @@
+services:
+  foxnas-standard:
+    environment:
+      # ===== 生产环境建议覆盖项 =====
+      # 建议改为你的实际域名（https）
+      OAUTH_BASE_URL: https://your-domain.com
+      OAUTH_FRONTEND_BASE_URL: https://your-domain.com
+
+      # 强烈建议改成高强度密码/密钥
+      MYSQL_ROOT_PASSWORD: change_this_root_password
+      MYSQL_PASSWORD: change_this_mysql_password
+      JWT_SECRET: change_this_to_a_long_random_secret
+
+      # 如需修改对外端口，可在这里覆盖（可选）
+      # APP_SERVER_PORT: 8848
+      # BROADCAST_PORT: 25522
+
