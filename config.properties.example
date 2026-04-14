@@ -143,7 +143,7 @@ spring.security.oauth2.client.registration.github.client-secret=your_github_clie
 spring.security.oauth2.client.registration.github.redirect-uri=${oauth.base.url}/api/login/oauth2/code/{registrationId}
 
 # QQ OAuth（必须是生产环境地址，且 https 加密，并且在 QQ 开发者平台配置）
-#spring.security.oauth2.client.registration.qq.client-id=your_qq_app_id
+spring.security.oauth2.client.registration.qq.client-id=your_qq_app_id
 spring.security.oauth2.client.registration.qq.client-secret=your_qq_app_key
 spring.security.oauth2.client.registration.qq.redirect-uri=${oauth.base.url}/api/login/oauth2/code/{registrationId}
 
