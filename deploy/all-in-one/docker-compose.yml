@@ -31,7 +31,7 @@ services:
       - ./data/redis:/data/redis
       - ./data/rabbitmq:/var/lib/rabbitmq
       - type: bind
-        source: ${FOXNAS_CONFIG_FILE:?请设置 FOXNAS_CONFIG_FILE 为本地 config.properties 路径}
+        source: ${FOXNAS_CONFIG_FILE:-../../config.properties}
         target: /opt/foxnas/config.properties
         read_only: true
       - ../../db_foxnas_schema.sql:/opt/foxnas/sql/db_foxnas_schema.sql:ro
